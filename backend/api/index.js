@@ -12,6 +12,8 @@ const ProductoMenuRepository = require('../src/infrastructure/repositories/Produ
 
 // Importar casos de uso
 const CrearProductoUseCase = require('../src/application/useCases/CrearProductoUseCase');
+const ActualizarProductoUseCase = require('../src/application/useCases/ActualizarProductoUseCase');
+const EliminarProductoUseCase = require('../src/application/useCases/EliminarProductoUseCase');
 const ProcesarPedidoUseCase = require('../src/application/useCases/ProcesarPedidoUseCase');
 const CrearProductoMenuUseCase = require('../src/application/useCases/CrearProductoMenuUseCase');
 const ProcesarPedidoMenuUseCase = require('../src/application/useCases/ProcesarPedidoMenuUseCase');
@@ -120,12 +122,14 @@ const productoMenuRepository = new ProductoMenuRepository(database);
 
 // Inicializar casos de uso
 const crearProductoUseCase = new CrearProductoUseCase(productoRepository);
+const actualizarProductoUseCase = new ActualizarProductoUseCase(productoRepository);
+const eliminarProductoUseCase = new EliminarProductoUseCase(productoRepository);
 const procesarPedidoUseCase = new ProcesarPedidoUseCase(pedidoRepository, productoRepository);
 const crearProductoMenuUseCase = new CrearProductoMenuUseCase(productoMenuRepository, productoRepository);
 const procesarPedidoMenuUseCase = new ProcesarPedidoMenuUseCase(pedidoRepository, productoRepository, productoMenuRepository);
 
 // Inicializar controladores
-const productoController = new ProductoController(productoRepository, crearProductoUseCase);
+const productoController = new ProductoController(productoRepository, crearProductoUseCase, actualizarProductoUseCase, eliminarProductoUseCase);
 const pedidoController = new PedidoController(pedidoRepository, procesarPedidoUseCase, procesarPedidoMenuUseCase);
 const productoMenuController = new ProductoMenuController(productoMenuRepository, crearProductoMenuUseCase);
 const reporteController = new ReporteController(pedidoRepository, productoRepository, productoMenuRepository);

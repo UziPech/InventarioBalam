@@ -2,9 +2,11 @@
  * Controlador para manejar las operaciones de productos
  */
 class ProductoController {
-    constructor(productoRepository, crearProductoUseCase) {
+    constructor(productoRepository, crearProductoUseCase, actualizarProductoUseCase, eliminarProductoUseCase) {
         this.productoRepository = productoRepository;
         this.crearProductoUseCase = crearProductoUseCase;
+        this.actualizarProductoUseCase = actualizarProductoUseCase;
+        this.eliminarProductoUseCase = eliminarProductoUseCase;
     }
 
     /**
@@ -91,28 +93,17 @@ class ProductoController {
     async actualizar(req, res) {
         try {
             const { id } = req.params;
-            const producto = await this.productoRepository.obtenerPorId(parseInt(id));
+            const resultado = await this.actualizarProductoUseCase.ejecutar(parseInt(id), req.body);
             
-            if (!producto) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Producto no encontrado'
+            if (resultado.success) {
+                res.json({
+                    success: true,
+                    data: resultado.data.toJSON(),
+                    message: resultado.message
                 });
+            } else {
+                res.status(400).json(resultado);
             }
-
-            // Actualizar propiedades
-            if (req.body.nombre) producto.nombre = req.body.nombre;
-            if (req.body.cantidad !== undefined) producto.cantidad = req.body.cantidad;
-            if (req.body.unidad) producto.unidad = req.body.unidad;
-            if (req.body.precio !== undefined) producto.precio = req.body.precio;
-
-            const productoActualizado = await this.productoRepository.actualizar(parseInt(id), producto);
-
-            res.json({
-                success: true,
-                data: productoActualizado.toJSON(),
-                message: 'Producto actualizado exitosamente'
-            });
         } catch (error) {
             res.status(500).json({
                 success: false,
@@ -130,21 +121,16 @@ class ProductoController {
     async eliminar(req, res) {
         try {
             const { id } = req.params;
-            const producto = await this.productoRepository.obtenerPorId(parseInt(id));
+            const resultado = await this.eliminarProductoUseCase.ejecutar(parseInt(id));
             
-            if (!producto) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Producto no encontrado'
+            if (resultado.success) {
+                res.json({
+                    success: true,
+                    message: resultado.message
                 });
+            } else {
+                res.status(404).json(resultado);
             }
-
-            await this.productoRepository.eliminar(parseInt(id));
-
-            res.json({
-                success: true,
-                message: 'Producto eliminado exitosamente'
-            });
         } catch (error) {
             res.status(500).json({
                 success: false,
@@ -188,8 +174,8 @@ class ProductoController {
 
     /**
      * Obtener productos con stock bajo
-     * @param {Object} req - Request de Express
-     * @param {Object} res - Response de Express
+     * @param {Object} req - Request of Express
+     * @param {Object} res - Response of Express
      */
     async obtenerConStockBajo(req, res) {
         try {
@@ -206,6 +192,48 @@ class ProductoController {
                 success: false,
                 error: error.message,
                 message: 'Error al obtener productos con stock bajo'
+            });
+        }
+    }
+
+    /**
+     * Actualizar stock de un producto
+     * @param {Object} req - Request of Express
+     * @param {Object} res - Response of Express
+     */
+    async actualizarStock(req, res) {
+        try {
+            const { id } = req.params;
+            const { cantidad } = req.body;
+
+            if (cantidad === undefined) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'La cantidad es requerida'
+                });
+            }
+
+            const producto = await this.productoRepository.obtenerPorId(parseInt(id));
+            
+            if (!producto) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Producto no encontrado'
+                });
+            }
+
+            const productoActualizado = await this.productoRepository.actualizarStock(parseInt(id), cantidad);
+
+            res.json({
+                success: true,
+                data: productoActualizado.toJSON(),
+                message: 'Stock actualizado exitosamente'
+            });
+        } catch (error) {
+            res.status(500).json({
+                success: false,
+                error: error.message,
+                message: 'Error al actualizar stock'
             });
         }
     }

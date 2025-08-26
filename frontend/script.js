@@ -31,7 +31,14 @@ async function initializeApp() {
         updateDateTime();
         setInterval(updateDateTime, 1000);
         
-        // Mostrar estadísticas
+        // Cargar dashboard y reportes
+        await Promise.all([
+            cargarDashboard(),
+            cargarProductosMasVendidos(),
+            cargarStockCritico()
+        ]);
+        
+        // Mostrar estadísticas locales
         actualizarEstadisticas();
         
         showToast('Sistema cargado exitosamente', 'success');
@@ -521,8 +528,8 @@ function filtrarHistorial() {
 
 // ==================== REPORTES ====================
 
-// Generar reporte
-function generarReporte() {
+// Generar reporte de ventas
+async function generarReporte() {
     const fechaInicio = document.getElementById('reporteFechaInicio').value;
     const fechaFin = document.getElementById('reporteFechaFin').value;
     
@@ -531,21 +538,176 @@ function generarReporte() {
         return;
     }
     
-    // Implementar generación de reportes
-    showToast('Reporte generado', 'success');
+    try {
+        showLoading();
+        const response = await apiRequest(`/reportes/ventas?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`);
+        
+        if (response.success) {
+            mostrarReporteVentas(response.data);
+            showToast('Reporte generado exitosamente', 'success');
+        } else {
+            showToast('Error al generar reporte', 'error');
+        }
+    } catch (error) {
+        console.error('Error al generar reporte:', error);
+        showToast('Error al generar reporte', 'error');
+    } finally {
+        hideLoading();
+    }
 }
 
-// Actualizar estadísticas
+// Mostrar reporte de ventas
+function mostrarReporteVentas(data) {
+    const reporteContainer = document.getElementById('reporteResultado');
+    if (!reporteContainer) return;
+    
+    reporteContainer.innerHTML = `
+        <div class="reporte-section">
+            <h3>Resumen del Período</h3>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h4>Total Ventas</h4>
+                    <p>$${data.resumen.totalVentas.toFixed(2)}</p>
+                </div>
+                <div class="stat-card">
+                    <h4>Total Pedidos</h4>
+                    <p>${data.resumen.totalPedidos}</p>
+                </div>
+                <div class="stat-card">
+                    <h4>Promedio por Pedido</h4>
+                    <p>$${data.resumen.promedioPorPedido.toFixed(2)}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="reporte-section">
+            <h3>Ventas por Día</h3>
+            <div class="ventas-dia">
+                ${data.ventasPorDia.map(dia => `
+                    <div class="dia-venta">
+                        <span class="fecha">${dia.fecha}</span>
+                        <span class="ventas">$${dia.ventas.toFixed(2)}</span>
+                        <span class="pedidos">${dia.pedidos} pedidos</span>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
+
+// Cargar dashboard
+async function cargarDashboard() {
+    try {
+        const response = await apiRequest('/reportes/dashboard');
+        
+        if (response.success) {
+            actualizarEstadisticasDashboard(response.data);
+        }
+    } catch (error) {
+        console.error('Error al cargar dashboard:', error);
+    }
+}
+
+// Actualizar estadísticas del dashboard
+function actualizarEstadisticasDashboard(data) {
+    // Inventario
+    const totalProductosEl = document.getElementById('totalProductos');
+    const stockBajoEl = document.getElementById('stockBajo');
+    const valorInventarioEl = document.getElementById('valorInventario');
+    
+    if (totalProductosEl) totalProductosEl.textContent = data.inventario.totalProductos;
+    if (stockBajoEl) stockBajoEl.textContent = data.inventario.totalProductos; // Temporal
+    if (valorInventarioEl) valorInventarioEl.textContent = '$' + data.inventario.valorTotal.toFixed(2);
+    
+    // Menú
+    const totalMenuEl = document.getElementById('totalMenu');
+    const menuActivosEl = document.getElementById('menuActivos');
+    
+    if (totalMenuEl) totalMenuEl.textContent = data.menu.totalProductos;
+    if (menuActivosEl) menuActivosEl.textContent = data.menu.productosActivos;
+    
+    // Ventas
+    const totalPedidosEl = document.getElementById('totalPedidos');
+    const ventasHoyEl = document.getElementById('ventasHoy');
+    const ventasMesEl = document.getElementById('ventasMes');
+    
+    if (totalPedidosEl) totalPedidosEl.textContent = data.ventas.totalPedidos;
+    if (ventasHoyEl) ventasHoyEl.textContent = '$' + data.ventas.ventasHoy.toFixed(2);
+    if (ventasMesEl) ventasMesEl.textContent = '$' + data.ventas.ventasMes.toFixed(2);
+}
+
+// Cargar productos más vendidos
+async function cargarProductosMasVendidos() {
+    try {
+        const response = await apiRequest('/reportes/productos-vendidos?limite=5');
+        
+        if (response.success) {
+            mostrarProductosMasVendidos(response.data.productos);
+        }
+    } catch (error) {
+        console.error('Error al cargar productos más vendidos:', error);
+    }
+}
+
+// Mostrar productos más vendidos
+function mostrarProductosMasVendidos(productos) {
+    const container = document.getElementById('productosMasVendidos');
+    if (!container) return;
+    
+    container.innerHTML = productos.map(producto => `
+        <div class="producto-vendido">
+            <span class="nombre">${producto.nombre}</span>
+            <span class="cantidad">${producto.cantidadVendida} vendidos</span>
+            <span class="total">$${producto.totalVentas.toFixed(2)}</span>
+        </div>
+    `).join('');
+}
+
+// Cargar stock crítico
+async function cargarStockCritico() {
+    try {
+        const response = await apiRequest('/reportes/stock-critico?limiteStock=10');
+        
+        if (response.success) {
+            mostrarStockCritico(response.data.productos);
+        }
+    } catch (error) {
+        console.error('Error al cargar stock crítico:', error);
+    }
+}
+
+// Mostrar stock crítico
+function mostrarStockCritico(productos) {
+    const container = document.getElementById('stockCritico');
+    if (!container) return;
+    
+    container.innerHTML = productos.map(producto => `
+        <div class="producto-critico ${producto.estado === 'Agotado' ? 'agotado' : 'stock-bajo'}">
+            <span class="nombre">${producto.nombre}</span>
+            <span class="cantidad">${producto.cantidad} ${producto.unidad}</span>
+            <span class="estado">${producto.estado}</span>
+        </div>
+    `).join('');
+}
+
+// Actualizar estadísticas (función local)
 function actualizarEstadisticas() {
     // Inventario
-    document.getElementById('totalProductos').textContent = productos.length;
-    document.getElementById('stockBajo').textContent = productos.filter(p => p.cantidad < 10).length;
-    document.getElementById('valorInventario').textContent = 
+    const totalProductosEl = document.getElementById('totalProductos');
+    const stockBajoEl = document.getElementById('stockBajo');
+    const valorInventarioEl = document.getElementById('valorInventario');
+    
+    if (totalProductosEl) totalProductosEl.textContent = productos.length;
+    if (stockBajoEl) stockBajoEl.textContent = productos.filter(p => p.cantidad < 10).length;
+    if (valorInventarioEl) valorInventarioEl.textContent = 
         '$' + productos.reduce((sum, p) => sum + (p.cantidad * p.precio), 0).toFixed(2);
     
     // Menú
-    document.getElementById('totalMenu').textContent = productosMenu.length;
-    document.getElementById('menuActivos').textContent = productosMenu.filter(p => p.activo).length;
+    const totalMenuEl = document.getElementById('totalMenu');
+    const menuActivosEl = document.getElementById('menuActivos');
+    
+    if (totalMenuEl) totalMenuEl.textContent = productosMenu.length;
+    if (menuActivosEl) menuActivosEl.textContent = productosMenu.filter(p => p.activo).length;
 }
 
 // ==================== UTILIDADES ====================

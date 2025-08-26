@@ -257,5 +257,42 @@ module.exports = (productoController) => {
      */
     router.get('/stock-bajo', productoController.obtenerConStockBajo.bind(productoController));
 
+    /**
+     * @swagger
+     * /api/productos/{id}/stock:
+     *   patch:
+     *     summary: Actualizar stock de un producto
+     *     tags: [Productos]
+     *     parameters:
+     *       - in: path
+     *         name: id
+     *         required: true
+     *         schema:
+     *           type: integer
+     *         description: ID del producto
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         application/json:
+     *           schema:
+     *             type: object
+     *             required:
+     *               - cantidad
+     *             properties:
+     *               cantidad:
+     *                 type: number
+     *                 description: Nueva cantidad en stock
+     *     responses:
+     *       200:
+     *         description: Stock actualizado exitosamente
+     *       400:
+     *         description: Cantidad requerida
+     *       404:
+     *         description: Producto no encontrado
+     *       500:
+     *         description: Error interno del servidor
+     */
+    router.patch('/:id/stock', productoController.actualizarStock.bind(productoController));
+
     return router;
 };

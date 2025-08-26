@@ -139,7 +139,7 @@ class ReporteController {
         try {
             const { limiteStock = 10 } = req.query;
             
-            const productos = await this.productoRepository.obtenerProductos();
+            const productos = await this.productoRepository.obtenerTodos();
             
             // Filtrar productos con stock bajo
             const stockCritico = productos
