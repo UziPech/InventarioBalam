@@ -5,7 +5,7 @@ const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
 
 // Importar repositorios
-const JsonDatabase = require('../src/infrastructure/database/JsonDatabase');
+const MongoDatabase = require('../src/infrastructure/database/MongoDatabase');
 const ProductoRepository = require('../src/infrastructure/repositories/ProductoRepository');
 const PedidoRepository = require('../src/infrastructure/repositories/PedidoRepository');
 const ProductoMenuRepository = require('../src/infrastructure/repositories/ProductoMenuRepository');
@@ -95,7 +95,24 @@ const specs = swaggerJsdoc(swaggerOptions);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
 // Inicializar dependencias
-const database = new JsonDatabase();
+const database = new MongoDatabase();
+
+// Conectar a MongoDB antes de inicializar repositorios
+app.use(async (req, res, next) => {
+    if (!database.db) {
+        try {
+            await database.connect();
+        } catch (error) {
+            console.error('Error conectando a MongoDB:', error);
+            return res.status(500).json({
+                success: false,
+                message: 'Error de conexión a la base de datos'
+            });
+        }
+    }
+    next();
+});
+
 const productoRepository = new ProductoRepository(database);
 const pedidoRepository = new PedidoRepository(database);
 const productoMenuRepository = new ProductoMenuRepository(database);
