@@ -20,6 +20,7 @@ const ProcesarPedidoMenuUseCase = require('../src/application/useCases/ProcesarP
 const ProductoController = require('../src/interfaces/controllers/ProductoController');
 const PedidoController = require('../src/interfaces/controllers/PedidoController');
 const ProductoMenuController = require('../src/interfaces/controllers/ProductoMenuController');
+const ReporteController = require('../src/interfaces/controllers/ReporteController');
 
 const app = express();
 
@@ -127,11 +128,13 @@ const procesarPedidoMenuUseCase = new ProcesarPedidoMenuUseCase(pedidoRepository
 const productoController = new ProductoController(productoRepository, crearProductoUseCase);
 const pedidoController = new PedidoController(pedidoRepository, procesarPedidoUseCase, procesarPedidoMenuUseCase);
 const productoMenuController = new ProductoMenuController(productoMenuRepository, crearProductoMenuUseCase);
+const reporteController = new ReporteController(pedidoRepository, productoRepository, productoMenuRepository);
 
 // Configurar rutas
 app.use('/api/productos', require('../src/interfaces/routes/productoRoutes')(productoController));
 app.use('/api/pedidos', require('../src/interfaces/routes/pedidoRoutes')(pedidoController));
 app.use('/api/productos-menu', require('../src/interfaces/routes/productoMenuRoutes')(productoMenuController));
+app.use('/api/reportes', require('../src/interfaces/routes/reporteRoutes')(reporteController));
 
 // Ruta de prueba
 app.get('/', (req, res) => {

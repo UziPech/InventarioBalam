@@ -2,8 +2,8 @@
 const CONFIG = {
     // Configuración de la API
     API: {
-        // URL de producción (Glitch)
-        BASE_URL: 'https://inventario-balam.glitch.me/api',
+        // URL de producción (Vercel)
+        BASE_URL: 'https://inventario-balam1.vercel.app/api',
         // URL de desarrollo (comentar cuando hagas deploy)
         // BASE_URL: 'http://localhost:3000/api',
         TIMEOUT: 10000, // 10 segundos
