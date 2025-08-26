@@ -23,7 +23,7 @@ class ReporteController {
                 });
             }
 
-            const pedidos = await this.pedidoRepository.obtenerPedidos();
+            const pedidos = await this.pedidoRepository.obtenerTodos();
             
             // Filtrar pedidos por período
             const pedidosFiltrados = pedidos.filter(pedido => {
@@ -81,7 +81,7 @@ class ReporteController {
         try {
             const { fechaInicio, fechaFin, limite = 10 } = req.query;
             
-            const pedidos = await this.pedidoRepository.obtenerPedidos();
+            const pedidos = await this.pedidoRepository.obtenerTodos();
             
             // Filtrar pedidos por período si se especifica
             let pedidosFiltrados = pedidos;
@@ -185,9 +185,9 @@ class ReporteController {
      */
     async obtenerDashboard(req, res) {
         try {
-            const productos = await this.productoRepository.obtenerProductos();
-            const productosMenu = await this.productoMenuRepository.obtenerProductosMenu();
-            const pedidos = await this.pedidoRepository.obtenerPedidos();
+            const productos = await this.productoRepository.obtenerTodos();
+            const productosMenu = await this.productoMenuRepository.obtenerTodos();
+            const pedidos = await this.pedidoRepository.obtenerTodos();
 
             // Calcular estadísticas
             const totalProductos = productos.length;
