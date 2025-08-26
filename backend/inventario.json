@@ -1,0 +1,95 @@
+{
+  "productos": [
+    {
+      "id": 1,
+      "nombre": "Pan de hamburguesa",
+      "cantidad": 50,
+      "unidad": "piezas",
+      "precio": 2.5,
+      "fechaCreacion": "2025-08-26T17:28:57.654Z",
+      "fechaActualizacion": "2025-08-26T17:28:57.655Z"
+    },
+    {
+      "id": 2,
+      "nombre": "Carne de res",
+      "cantidad": 20,
+      "unidad": "kg",
+      "precio": 120,
+      "fechaCreacion": "2025-08-26T17:28:57.655Z",
+      "fechaActualizacion": "2025-08-26T17:28:57.655Z"
+    },
+    {
+      "id": 3,
+      "nombre": "Queso americano",
+      "cantidad": 30,
+      "unidad": "rebanadas",
+      "precio": 1.5,
+      "fechaCreacion": "2025-08-26T17:28:57.655Z",
+      "fechaActualizacion": "2025-08-26T17:28:57.655Z"
+    },
+    {
+      "id": 4,
+      "nombre": "Lechuga",
+      "cantidad": 5,
+      "unidad": "kg",
+      "precio": 15,
+      "fechaCreacion": "2025-08-26T17:28:57.655Z",
+      "fechaActualizacion": "2025-08-26T17:28:57.655Z"
+    },
+    {
+      "id": 5,
+      "nombre": "Tomate",
+      "cantidad": 3,
+      "unidad": "kg",
+      "precio": 12,
+      "fechaCreacion": "2025-08-26T17:28:57.655Z",
+      "fechaActualizacion": "2025-08-26T17:28:57.655Z"
+    },
+    {
+      "id": 6,
+      "nombre": "Cebolla",
+      "cantidad": 2,
+      "unidad": "kg",
+      "precio": 8,
+      "fechaCreacion": "2025-08-26T17:28:57.655Z",
+      "fechaActualizacion": "2025-08-26T17:28:57.655Z"
+    },
+    {
+      "id": 7,
+      "nombre": "Salsa de tomate",
+      "cantidad": 10,
+      "unidad": "botellas",
+      "precio": 25,
+      "fechaCreacion": "2025-08-26T17:28:57.655Z",
+      "fechaActualizacion": "2025-08-26T17:28:57.655Z"
+    },
+    {
+      "id": 8,
+      "nombre": "Mostaza",
+      "cantidad": 8,
+      "unidad": "botellas",
+      "precio": 20,
+      "fechaCreacion": "2025-08-26T17:28:57.655Z",
+      "fechaActualizacion": "2025-08-26T17:28:57.655Z"
+    },
+    {
+      "id": 9,
+      "nombre": "Mayonesa",
+      "cantidad": 6,
+      "unidad": "botellas",
+      "precio": 22,
+      "fechaCreacion": "2025-08-26T17:28:57.655Z",
+      "fechaActualizacion": "2025-08-26T17:28:57.655Z"
+    },
+    {
+      "id": 10,
+      "nombre": "Papas fritas",
+      "cantidad": 15,
+      "unidad": "kg",
+      "precio": 35,
+      "fechaCreacion": "2025-08-26T17:28:57.655Z",
+      "fechaActualizacion": "2025-08-26T17:28:57.655Z"
+    }
+  ],
+  "pedidos": []
+}

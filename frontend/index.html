@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍔 Inventario Balam - Sistema de Gestión</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-hamburger"></i>
+                <h1>Inventario Balam</h1>
+            </div>
+            <div class="header-info">
+                <span class="date" id="currentDate"></span>
+                <span class="time" id="currentTime"></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-container">
+            <button class="nav-btn active" data-tab="inventario">
+                <i class="fas fa-boxes"></i>
+                Inventario
+            </button>
+            <button class="nav-btn" data-tab="menu">
+                <i class="fas fa-utensils"></i>
+                Menú
+            </button>
+            <button class="nav-btn" data-tab="pedidos">
+                <i class="fas fa-shopping-cart"></i>
+                Nuevo Pedido
+            </button>
+            <button class="nav-btn" data-tab="historial">
+                <i class="fas fa-history"></i>
+                Historial
+            </button>
+            <button class="nav-btn" data-tab="reportes">
+                <i class="fas fa-chart-bar"></i>
+                Reportes
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main">
+        <!-- Inventario Tab -->
+        <section id="inventario" class="tab-content active">
+            <div class="section-header">
+                <h2><i class="fas fa-boxes"></i> Gestión de Inventario</h2>
+                <button class="btn btn-primary" onclick="openModal('agregarProducto')">
+                    <i class="fas fa-plus"></i> Agregar Producto
+                </button>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-boxes"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalProductos">0</h3>
+                        <p>Total Productos</p>
+                    </div>
+                </div>
+                <div class="stat-card warning">
+                    <div class="stat-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="stockBajo">0</h3>
+                        <p>Stock Bajo</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="valorInventario">$0</h3>
+                        <p>Valor Total</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="search-bar">
+                <input type="text" id="searchInventario" placeholder="Buscar productos..." class="search-input">
+                <button class="btn btn-secondary" onclick="filtrarInventario()">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th>Unidad</th>
+                            <th>Precio</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventarioTable">
+                        <!-- Los productos se cargarán dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Menú Tab -->
+        <section id="menu" class="tab-content">
+            <div class="section-header">
+                <h2><i class="fas fa-utensils"></i> Gestión del Menú</h2>
+                <button class="btn btn-primary" onclick="openModal('agregarProductoMenu')">
+                    <i class="fas fa-plus"></i> Agregar al Menú
+                </button>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-utensils"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalMenu">0</h3>
+                        <p>Productos en Menú</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-toggle-on"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="menuActivos">0</h3>
+                        <p>Productos Activos</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="menu-grid" id="menuGrid">
+                <!-- Los productos del menú se cargarán dinámicamente -->
+            </div>
+        </section>
+
+        <!-- Nuevo Pedido Tab -->
+        <section id="pedidos" class="tab-content">
+            <div class="section-header">
+                <h2><i class="fas fa-shopping-cart"></i> Crear Nuevo Pedido</h2>
+            </div>
+
+            <div class="pedido-container">
+                <div class="pedido-form">
+                    <div class="form-group">
+                        <label for="clientePedido">Cliente:</label>
+                        <input type="text" id="clientePedido" placeholder="Cliente General" class="form-input">
+                    </div>
+                    
+                    <div class="menu-selection">
+                        <h3>Productos Disponibles</h3>
+                        <div class="menu-items" id="menuItems">
+                            <!-- Los productos del menú se cargarán aquí -->
+                        </div>
+                    </div>
+
+                    <div class="pedido-resumen">
+                        <h3>Resumen del Pedido</h3>
+                        <div class="resumen-items" id="resumenItems">
+                            <!-- Los items seleccionados aparecerán aquí -->
+                        </div>
+                        <div class="pedido-total">
+                            <h4>Total: <span id="pedidoTotal">$0.00</span></h4>
+                        </div>
+                        <button class="btn btn-success btn-large" onclick="crearPedido()">
+                            <i class="fas fa-check"></i> Crear Pedido
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Historial Tab -->
+        <section id="historial" class="tab-content">
+            <div class="section-header">
+                <h2><i class="fas fa-history"></i> Historial de Pedidos</h2>
+                <div class="filters">
+                    <input type="date" id="fechaInicio" class="form-input">
+                    <input type="date" id="fechaFin" class="form-input">
+                    <button class="btn btn-secondary" onclick="filtrarHistorial()">
+                        <i class="fas fa-filter"></i> Filtrar
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Cliente</th>
+                            <th>Items</th>
+                            <th>Total</th>
+                            <th>Fecha</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historialTable">
+                        <!-- Los pedidos se cargarán dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Reportes Tab -->
+        <section id="reportes" class="tab-content">
+            <div class="section-header">
+                <h2><i class="fas fa-chart-bar"></i> Reportes y Estadísticas</h2>
+                <div class="filters">
+                    <input type="date" id="reporteFechaInicio" class="form-input">
+                    <input type="date" id="reporteFechaFin" class="form-input">
+                    <button class="btn btn-secondary" onclick="generarReporte()">
+                        <i class="fas fa-chart-line"></i> Generar Reporte
+                    </button>
+                </div>
+            </div>
+
+            <div class="reportes-grid">
+                <div class="reporte-card">
+                    <h3>Ventas del Período</h3>
+                    <div class="reporte-content" id="ventasReporte">
+                        <!-- Contenido del reporte -->
+                    </div>
+                </div>
+                <div class="reporte-card">
+                    <h3>Productos Más Vendidos</h3>
+                    <div class="reporte-content" id="productosVendidos">
+                        <!-- Contenido del reporte -->
+                    </div>
+                </div>
+                <div class="reporte-card">
+                    <h3>Stock Crítico</h3>
+                    <div class="reporte-content" id="stockCritico">
+                        <!-- Contenido del reporte -->
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modals -->
+    <!-- Modal Agregar Producto -->
+    <div id="agregarProducto" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-plus"></i> Agregar Producto al Inventario</h3>
+                <span class="close" onclick="closeModal('agregarProducto')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="formAgregarProducto">
+                    <div class="form-group">
+                        <label for="nombreProducto">Nombre del Producto:</label>
+                        <input type="text" id="nombreProducto" required class="form-input">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="cantidadProducto">Cantidad:</label>
+                            <input type="number" id="cantidadProducto" step="0.01" required class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label for="unidadProducto">Unidad:</label>
+                            <select id="unidadProducto" required class="form-input">
+                                <option value="piezas">Piezas</option>
+                                <option value="kg">Kilogramos</option>
+                                <option value="g">Gramos</option>
+                                <option value="l">Litros</option>
+                                <option value="ml">Mililitros</option>
+                                <option value="rebanadas">Rebanadas</option>
+                                <option value="botellas">Botellas</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="precioProducto">Precio de Compra:</label>
+                        <input type="number" id="precioProducto" step="0.01" required class="form-input">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('agregarProducto')">Cancelar</button>
+                <button class="btn btn-primary" onclick="agregarProducto()">Agregar Producto</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Agregar Producto al Menú -->
+    <div id="agregarProductoMenu" class="modal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3><i class="fas fa-utensils"></i> Agregar Producto al Menú</h3>
+                <span class="close" onclick="closeModal('agregarProductoMenu')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="formAgregarProductoMenu">
+                    <div class="form-group">
+                        <label for="nombreProductoMenu">Nombre del Producto:</label>
+                        <input type="text" id="nombreProductoMenu" required class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="descripcionProductoMenu">Descripción:</label>
+                        <textarea id="descripcionProductoMenu" class="form-input" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="precioProductoMenu">Precio de Venta:</label>
+                        <input type="number" id="precioProductoMenu" step="0.01" required class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label>Ingredientes:</label>
+                        <div id="ingredientesContainer">
+                            <div class="ingrediente-item">
+                                <select class="form-input ingrediente-select">
+                                    <option value="">Seleccionar ingrediente...</option>
+                                </select>
+                                <input type="number" class="form-input ingrediente-cantidad" step="0.01" placeholder="Cantidad">
+                                <button type="button" class="btn btn-danger btn-small" onclick="removerIngrediente(this)">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-secondary" onclick="agregarIngrediente()">
+                            <i class="fas fa-plus"></i> Agregar Ingrediente
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('agregarProductoMenu')">Cancelar</button>
+                <button class="btn btn-primary" onclick="agregarProductoMenu()">Agregar al Menú</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading" class="loading-overlay">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Cargando...</p>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Scripts -->
+    <script src="config.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

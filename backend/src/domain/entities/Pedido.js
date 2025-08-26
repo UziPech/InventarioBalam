@@ -1,0 +1,89 @@
+class Pedido {
+    constructor(id, cliente, items, total) {
+        this.id = id;
+        this.cliente = cliente;
+        this.items = items || [];
+        this.total = total || 0;
+        this.fecha = new Date();
+        this.estado = 'pendiente'; // pendiente, procesado, cancelado
+    }
+
+    // Métodos de negocio
+    agregarItem(productoId, nombre, cantidad, precio) {
+        const item = {
+            productoId,
+            nombre,
+            cantidad,
+            precio,
+            subtotal: cantidad * precio
+        };
+        
+        this.items.push(item);
+        this.calcularTotal();
+    }
+
+    removerItem(productoId) {
+        this.items = this.items.filter(item => item.productoId !== productoId);
+        this.calcularTotal();
+    }
+
+    calcularTotal() {
+        this.total = this.items.reduce((sum, item) => sum + item.subtotal, 0);
+        return this.total;
+    }
+
+    obtenerCantidadItems() {
+        return this.items.length;
+    }
+
+    obtenerItems() {
+        return [...this.items]; // Retorna una copia para evitar modificaciones externas
+    }
+
+    actualizarEstado(nuevoEstado) {
+        const estadosValidos = ['pendiente', 'procesado', 'cancelado'];
+        if (!estadosValidos.includes(nuevoEstado)) {
+            throw new Error('Estado no válido');
+        }
+        this.estado = nuevoEstado;
+    }
+
+    esValido() {
+        return this.cliente && 
+               this.cliente.trim().length > 0 && 
+               this.items.length > 0 &&
+               this.total >= 0;
+    }
+
+    // Método para obtener productos únicos en el pedido
+    obtenerProductosUnicos() {
+        const productosUnicos = new Map();
+        
+        this.items.forEach(item => {
+            if (productosUnicos.has(item.productoId)) {
+                productosUnicos.get(item.productoId).cantidad += item.cantidad;
+            } else {
+                productosUnicos.set(item.productoId, {
+                    productoId: item.productoId,
+                    cantidad: item.cantidad
+                });
+            }
+        });
+        
+        return Array.from(productosUnicos.values());
+    }
+
+    // Método para convertir a objeto plano
+    toJSON() {
+        return {
+            id: this.id,
+            cliente: this.cliente,
+            items: this.items,
+            total: this.total,
+            fecha: this.fecha,
+            estado: this.estado
+        };
+    }
+}
+
+module.exports = Pedido;
