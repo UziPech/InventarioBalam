@@ -16,7 +16,7 @@ class PedidoRepository extends IPedidoRepository {
      */
     async obtenerTodos() {
         try {
-            const pedidosData = this.database.getPedidos();
+            const pedidosData = await this.database.getPedidos();
             return pedidosData.map(data => new Pedido(
                 data.id,
                 data.cliente,

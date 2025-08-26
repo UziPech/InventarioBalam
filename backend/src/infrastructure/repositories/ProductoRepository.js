@@ -16,7 +16,7 @@ class ProductoRepository extends IProductoRepository {
      */
     async obtenerTodos() {
         try {
-            const productosData = this.database.getProductos();
+            const productosData = await this.database.getProductos();
             return productosData.map(data => new Producto(
                 data.id,
                 data.nombre,
@@ -36,7 +36,7 @@ class ProductoRepository extends IProductoRepository {
      */
     async obtenerPorId(id) {
         try {
-            const productosData = this.database.getProductos();
+            const productosData = await this.database.getProductos();
             const productoData = productosData.find(p => p.id === id);
             
             if (!productoData) {
@@ -62,7 +62,7 @@ class ProductoRepository extends IProductoRepository {
      */
     async crear(producto) {
         try {
-            const productosData = this.database.getProductos();
+            const productosData = await this.database.getProductos();
             
             // Generar nuevo ID
             const nuevoId = Math.max(...productosData.map(p => p.id), 0) + 1;
@@ -73,7 +73,7 @@ class ProductoRepository extends IProductoRepository {
             producto.fechaActualizacion = new Date();
             
             productosData.push(producto.toJSON());
-            this.database.saveProductos(productosData);
+            await this.database.saveProductos(productosData);
             
             return producto;
         } catch (error) {
@@ -89,7 +89,7 @@ class ProductoRepository extends IProductoRepository {
      */
     async actualizar(id, datos) {
         try {
-            const productosData = this.database.getProductos();
+            const productosData = await this.database.getProductos();
             const index = productosData.findIndex(p => p.id === id);
             
             if (index === -1) {
@@ -103,7 +103,7 @@ class ProductoRepository extends IProductoRepository {
                 fechaActualizacion: new Date()
             };
 
-            this.database.saveProductos(productosData);
+            await this.database.saveProductos(productosData);
             
             return new Producto(
                 productosData[index].id,
@@ -124,7 +124,7 @@ class ProductoRepository extends IProductoRepository {
      */
     async eliminar(id) {
         try {
-            const productosData = this.database.getProductos();
+            const productosData = await this.database.getProductos();
             const index = productosData.findIndex(p => p.id === id);
             
             if (index === -1) {
@@ -132,7 +132,7 @@ class ProductoRepository extends IProductoRepository {
             }
 
             productosData.splice(index, 1);
-            this.database.saveProductos(productosData);
+            await this.database.saveProductos(productosData);
             
             return true;
         } catch (error) {
@@ -169,7 +169,7 @@ class ProductoRepository extends IProductoRepository {
      */
     async buscarPorNombre(nombre) {
         try {
-            const productosData = this.database.getProductos();
+            const productosData = await this.database.getProductos();
             const productosFiltrados = productosData.filter(p => 
                 p.nombre.toLowerCase().includes(nombre.toLowerCase())
             );
@@ -193,7 +193,7 @@ class ProductoRepository extends IProductoRepository {
      */
     async obtenerConStockBajo(limite = 10) {
         try {
-            const productosData = this.database.getProductos();
+            const productosData = await this.database.getProductos();
             const productosStockBajo = productosData.filter(p => p.cantidad <= limite);
 
             return productosStockBajo.map(data => new Producto(
