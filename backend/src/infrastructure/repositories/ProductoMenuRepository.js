@@ -111,7 +111,7 @@ class ProductoMenuRepository extends IProductoMenuRepository {
      */
     async actualizar(id, datos) {
         try {
-            const productosMenuData = this.database.getProductosMenu();
+            const productosMenuData = await this.database.getProductosMenu();
             const index = productosMenuData.findIndex(p => p.id === id);
             
             if (index === -1) {
@@ -125,7 +125,7 @@ class ProductoMenuRepository extends IProductoMenuRepository {
                 fechaActualizacion: new Date()
             };
 
-            this.database.saveProductosMenu(productosMenuData);
+            await this.database.saveProductosMenu(productosMenuData);
             
             return new ProductoMenu(
                 productosMenuData[index].id,
@@ -146,7 +146,7 @@ class ProductoMenuRepository extends IProductoMenuRepository {
      */
     async eliminar(id) {
         try {
-            const productosMenuData = this.database.getProductosMenu();
+            const productosMenuData = await this.database.getProductosMenu();
             const index = productosMenuData.findIndex(p => p.id === id);
             
             if (index === -1) {
@@ -154,7 +154,7 @@ class ProductoMenuRepository extends IProductoMenuRepository {
             }
 
             productosMenuData.splice(index, 1);
-            this.database.saveProductosMenu(productosMenuData);
+            await this.database.saveProductosMenu(productosMenuData);
             
             return true;
         } catch (error) {
@@ -169,7 +169,7 @@ class ProductoMenuRepository extends IProductoMenuRepository {
      */
     async buscarPorNombre(nombre) {
         try {
-            const productosMenuData = this.database.getProductosMenu();
+            const productosMenuData = await this.database.getProductosMenu();
             const productosFiltrados = productosMenuData.filter(p => 
                 p.nombre.toLowerCase().includes(nombre.toLowerCase())
             );
@@ -194,7 +194,7 @@ class ProductoMenuRepository extends IProductoMenuRepository {
      */
     async obtenerPorRangoPrecio(precioMin, precioMax) {
         try {
-            const productosMenuData = this.database.getProductosMenu();
+            const productosMenuData = await this.database.getProductosMenu();
             const productosFiltrados = productosMenuData.filter(p => 
                 p.precio >= precioMin && p.precio <= precioMax
             );
@@ -219,7 +219,7 @@ class ProductoMenuRepository extends IProductoMenuRepository {
      */
     async cambiarEstado(id, activo) {
         try {
-            const productosMenuData = this.database.getProductosMenu();
+            const productosMenuData = await this.database.getProductosMenu();
             const index = productosMenuData.findIndex(p => p.id === id);
             
             if (index === -1) {
@@ -229,7 +229,7 @@ class ProductoMenuRepository extends IProductoMenuRepository {
             productosMenuData[index].activo = activo;
             productosMenuData[index].fechaActualizacion = new Date();
 
-            this.database.saveProductosMenu(productosMenuData);
+            await this.database.saveProductosMenu(productosMenuData);
             
             return new ProductoMenu(
                 productosMenuData[index].id,
@@ -250,7 +250,7 @@ class ProductoMenuRepository extends IProductoMenuRepository {
      */
     async obtenerPorIngrediente(productoId) {
         try {
-            const productosMenuData = this.database.getProductosMenu();
+            const productosMenuData = await this.database.getProductosMenu();
             const productosFiltrados = productosMenuData.filter(p => 
                 p.ingredientes.some(i => i.productoId === productoId)
             );
@@ -273,7 +273,7 @@ class ProductoMenuRepository extends IProductoMenuRepository {
      */
     async obtenerEstadisticas() {
         try {
-            const productosMenuData = this.database.getProductosMenu();
+            const productosMenuData = await this.database.getProductosMenu();
             
             const totalProductos = productosMenuData.length;
             const productosActivos = productosMenuData.filter(p => p.activo).length;
