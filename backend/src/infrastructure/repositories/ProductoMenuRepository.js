@@ -16,7 +16,7 @@ class ProductoMenuRepository extends IProductoMenuRepository {
      */
     async obtenerTodos() {
         try {
-            const productosMenuData = this.database.getProductosMenu();
+            const productosMenuData = await this.database.getProductosMenu();
             return productosMenuData.map(data => new ProductoMenu(
                 data.id,
                 data.nombre,
@@ -35,7 +35,7 @@ class ProductoMenuRepository extends IProductoMenuRepository {
      */
     async obtenerActivos() {
         try {
-            const productosMenuData = this.database.getProductosMenu();
+            const productosMenuData = await this.database.getProductosMenu();
             return productosMenuData
                 .filter(data => data.activo)
                 .map(data => new ProductoMenu(
@@ -57,7 +57,7 @@ class ProductoMenuRepository extends IProductoMenuRepository {
      */
     async obtenerPorId(id) {
         try {
-            const productosMenuData = this.database.getProductosMenu();
+            const productosMenuData = await this.database.getProductosMenu();
             const productoMenuData = productosMenuData.find(p => p.id === id);
             
             if (!productoMenuData) {
@@ -83,7 +83,7 @@ class ProductoMenuRepository extends IProductoMenuRepository {
      */
     async crear(productoMenu) {
         try {
-            const productosMenuData = this.database.getProductosMenu();
+            const productosMenuData = await this.database.getProductosMenu();
             
             // Generar nuevo ID
             const nuevoId = Math.max(...productosMenuData.map(p => p.id), 0) + 1;
@@ -95,7 +95,7 @@ class ProductoMenuRepository extends IProductoMenuRepository {
             productoMenu.activo = true;
             
             productosMenuData.push(productoMenu.toJSON());
-            this.database.saveProductosMenu(productosMenuData);
+            await this.database.saveProductosMenu(productosMenuData);
             
             return productoMenu;
         } catch (error) {

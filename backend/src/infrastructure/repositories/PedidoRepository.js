@@ -35,7 +35,7 @@ class PedidoRepository extends IPedidoRepository {
      */
     async obtenerPorId(id) {
         try {
-            const pedidosData = this.database.getPedidos();
+            const pedidosData = await this.database.getPedidos();
             const pedidoData = pedidosData.find(p => p.id === id);
             
             if (!pedidoData) {
@@ -60,7 +60,7 @@ class PedidoRepository extends IPedidoRepository {
      */
     async crear(pedido) {
         try {
-            const pedidosData = this.database.getPedidos();
+            const pedidosData = await this.database.getPedidos();
             
             // Generar nuevo ID
             const nuevoId = Math.max(...pedidosData.map(p => p.id), 0) + 1;
@@ -70,7 +70,7 @@ class PedidoRepository extends IPedidoRepository {
             pedido.fecha = new Date();
             
             pedidosData.push(pedido.toJSON());
-            this.database.savePedidos(pedidosData);
+            await this.database.savePedidos(pedidosData);
             
             return pedido;
         } catch (error) {
@@ -86,7 +86,7 @@ class PedidoRepository extends IPedidoRepository {
      */
     async actualizar(id, datos) {
         try {
-            const pedidosData = this.database.getPedidos();
+            const pedidosData = await this.database.getPedidos();
             const index = pedidosData.findIndex(p => p.id === id);
             
             if (index === -1) {
@@ -99,7 +99,7 @@ class PedidoRepository extends IPedidoRepository {
                 ...datos.toJSON()
             };
 
-            this.database.savePedidos(pedidosData);
+            await this.database.savePedidos(pedidosData);
             
             return new Pedido(
                 pedidosData[index].id,
@@ -119,7 +119,7 @@ class PedidoRepository extends IPedidoRepository {
      */
     async eliminar(id) {
         try {
-            const pedidosData = this.database.getPedidos();
+            const pedidosData = await this.database.getPedidos();
             const index = pedidosData.findIndex(p => p.id === id);
             
             if (index === -1) {
@@ -127,7 +127,7 @@ class PedidoRepository extends IPedidoRepository {
             }
 
             pedidosData.splice(index, 1);
-            this.database.savePedidos(pedidosData);
+            await this.database.savePedidos(pedidosData);
             
             return true;
         } catch (error) {
@@ -142,7 +142,7 @@ class PedidoRepository extends IPedidoRepository {
      */
     async obtenerPorCliente(cliente) {
         try {
-            const pedidosData = this.database.getPedidos();
+            const pedidosData = await this.database.getPedidos();
             const pedidosFiltrados = pedidosData.filter(p => 
                 p.cliente.toLowerCase().includes(cliente.toLowerCase())
             );
@@ -166,7 +166,7 @@ class PedidoRepository extends IPedidoRepository {
      */
     async obtenerPorFecha(fechaInicio, fechaFin) {
         try {
-            const pedidosData = this.database.getPedidos();
+            const pedidosData = await this.database.getPedidos();
             const pedidosFiltrados = pedidosData.filter(p => {
                 const fechaPedido = new Date(p.fecha);
                 return fechaPedido >= fechaInicio && fechaPedido <= fechaFin;
@@ -190,7 +190,7 @@ class PedidoRepository extends IPedidoRepository {
      */
     async obtenerPorEstado(estado) {
         try {
-            const pedidosData = this.database.getPedidos();
+            const pedidosData = await this.database.getPedidos();
             const pedidosFiltrados = pedidosData.filter(p => p.estado === estado);
 
             return pedidosFiltrados.map(data => new Pedido(
@@ -212,7 +212,7 @@ class PedidoRepository extends IPedidoRepository {
      */
     async obtenerEstadisticas(fechaInicio, fechaFin) {
         try {
-            const pedidosData = this.database.getPedidos();
+            const pedidosData = await this.database.getPedidos();
             const pedidosEnRango = pedidosData.filter(p => {
                 const fechaPedido = new Date(p.fecha);
                 return fechaPedido >= fechaInicio && fechaPedido <= fechaFin;
