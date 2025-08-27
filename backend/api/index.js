@@ -100,6 +100,9 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 // Inicializar dependencias
 const database = new MongoDatabase();
 
+// Hacer la base de datos disponible globalmente
+app.locals.database = database;
+
 // Conectar a MongoDB antes de inicializar repositorios
 app.use(async (req, res, next) => {
     if (!database.db) {

@@ -294,5 +294,48 @@ module.exports = (productoController) => {
      */
     router.patch('/:id/stock', productoController.actualizarStock.bind(productoController));
 
+    /**
+     * @swagger
+     * /api/productos/initialize:
+     *   post:
+     *     summary: Inicializar datos de productos
+     *     description: Fuerza la inicialización de productos y productos del menú en la base de datos
+     *     tags: [Productos]
+     *     responses:
+     *       200:
+     *         description: Datos inicializados correctamente
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *               properties:
+     *                 success:
+     *                   type: boolean
+     *                   example: true
+     *                 message:
+     *                   type: string
+     *                   example: Datos inicializados correctamente
+     *       500:
+     *         description: Error al inicializar datos
+     */
+    router.post('/initialize', async (req, res) => {
+        try {
+            // Forzar inicialización de datos
+            await req.app.locals.database.initializeData();
+            
+            res.json({
+                success: true,
+                message: 'Datos inicializados correctamente'
+            });
+        } catch (error) {
+            console.error('Error al inicializar datos:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error al inicializar datos',
+                error: error.message
+            });
+        }
+    });
+
     return router;
 };

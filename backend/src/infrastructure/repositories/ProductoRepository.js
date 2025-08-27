@@ -99,7 +99,7 @@ class ProductoRepository extends IProductoRepository {
             // Actualizar datos
             productosData[index] = {
                 ...productosData[index],
-                ...datos.toJSON(),
+                ...datos,
                 fechaActualizacion: new Date()
             };
 
