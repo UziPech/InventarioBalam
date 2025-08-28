@@ -77,6 +77,116 @@ module.exports = (pedidoController) => {
 
     /**
      * @swagger
+     * /api/pedidos/hoy:
+     *   get:
+     *     summary: Obtener pedidos de hoy
+     *     tags: [Pedidos]
+     *     responses:
+     *       200:
+     *         description: Pedidos de hoy obtenidos exitosamente
+     *       500:
+     *         description: Error interno del servidor
+     */
+    router.get('/hoy', pedidoController.obtenerPedidosHoy.bind(pedidoController));
+
+    /**
+     * @swagger
+     * /api/pedidos/semana:
+     *   get:
+     *     summary: Obtener pedidos de esta semana
+     *     tags: [Pedidos]
+     *     responses:
+     *       200:
+     *         description: Pedidos de esta semana obtenidos exitosamente
+     *       500:
+     *         description: Error interno del servidor
+     */
+    router.get('/semana', pedidoController.obtenerPedidosEstaSemana.bind(pedidoController));
+
+    /**
+     * @swagger
+     * /api/pedidos/mes:
+     *   get:
+     *     summary: Obtener pedidos de este mes
+     *     tags: [Pedidos]
+     *     responses:
+     *       200:
+     *         description: Pedidos de este mes obtenidos exitosamente
+     *       500:
+     *         description: Error interno del servidor
+     */
+    router.get('/mes', pedidoController.obtenerPedidosEsteMes.bind(pedidoController));
+
+    /**
+     * @swagger
+     * /api/pedidos/pendientes:
+     *   get:
+     *     summary: Obtener pedidos pendientes
+     *     tags: [Pedidos]
+     *     responses:
+     *       200:
+     *         description: Pedidos pendientes obtenidos exitosamente
+     *       500:
+     *         description: Error interno del servidor
+     */
+    router.get('/pendientes', pedidoController.obtenerPedidosPendientes.bind(pedidoController));
+
+    /**
+     * @swagger
+     * /api/pedidos/cliente:
+     *   get:
+     *     summary: Obtener pedidos por cliente
+     *     tags: [Pedidos]
+     *     parameters:
+     *       - in: query
+     *         name: cliente
+     *         required: true
+     *         schema:
+     *           type: string
+     *         description: Nombre del cliente
+     *     responses:
+     *       200:
+     *         description: Pedidos del cliente obtenidos exitosamente
+     *       400:
+     *         description: Parámetro cliente requerido
+     *       500:
+     *         description: Error interno del servidor
+     */
+    router.get('/cliente', pedidoController.obtenerPorCliente.bind(pedidoController));
+
+    /**
+     * @swagger
+     * /api/pedidos/estadisticas:
+     *   get:
+     *     summary: Obtener estadísticas de pedidos
+     *     tags: [Pedidos]
+     *     parameters:
+     *       - in: query
+     *         name: fechaInicio
+     *         required: true
+     *         schema:
+     *           type: string
+     *           format: date
+     *         description: Fecha de inicio (YYYY-MM-DD)
+     *       - in: query
+     *         name: fechaFin
+     *         required: true
+     *         schema:
+     *           type: string
+     *           format: date
+     *         description: Fecha de fin (YYYY-MM-DD)
+     *     responses:
+     *       200:
+     *         description: Estadísticas obtenidas exitosamente
+     *       400:
+     *         description: Parámetros de fecha requeridos
+     *       500:
+     *         description: Error interno del servidor
+     */
+    router.get('/estadisticas', pedidoController.obtenerEstadisticas.bind(pedidoController));
+
+    /**
+     * @swagger
      * /api/pedidos/{id}:
      *   get:
      *     summary: Obtener un pedido por ID
@@ -266,116 +376,6 @@ module.exports = (pedidoController) => {
      *         description: Error interno del servidor
      */
     router.delete('/:id', pedidoController.eliminar.bind(pedidoController));
-
-    /**
-     * @swagger
-     * /api/pedidos/cliente:
-     *   get:
-     *     summary: Obtener pedidos por cliente
-     *     tags: [Pedidos]
-     *     parameters:
-     *       - in: query
-     *         name: cliente
-     *         required: true
-     *         schema:
-     *           type: string
-     *         description: Nombre del cliente
-     *     responses:
-     *       200:
-     *         description: Pedidos del cliente obtenidos exitosamente
-     *       400:
-     *         description: Parámetro cliente requerido
-     *       500:
-     *         description: Error interno del servidor
-     */
-    router.get('/cliente', pedidoController.obtenerPorCliente.bind(pedidoController));
-
-    /**
-     * @swagger
-     * /api/pedidos/estadisticas:
-     *   get:
-     *     summary: Obtener estadísticas de pedidos
-     *     tags: [Pedidos]
-     *     parameters:
-     *       - in: query
-     *         name: fechaInicio
-     *         required: true
-     *         schema:
-     *           type: string
-     *           format: date
-     *         description: Fecha de inicio (YYYY-MM-DD)
-     *       - in: query
-     *         name: fechaFin
-     *         required: true
-     *         schema:
-     *           type: string
-     *           format: date
-     *         description: Fecha de fin (YYYY-MM-DD)
-     *     responses:
-     *       200:
-     *         description: Estadísticas obtenidas exitosamente
-     *       400:
-     *         description: Parámetros de fecha requeridos
-     *       500:
-     *         description: Error interno del servidor
-     */
-    router.get('/estadisticas', pedidoController.obtenerEstadisticas.bind(pedidoController));
-
-    /**
-     * @swagger
-     * /api/pedidos/hoy:
-     *   get:
-     *     summary: Obtener pedidos de hoy
-     *     tags: [Pedidos]
-     *     responses:
-     *       200:
-     *         description: Pedidos de hoy obtenidos exitosamente
-     *       500:
-     *         description: Error interno del servidor
-     */
-    router.get('/hoy', pedidoController.obtenerPedidosHoy.bind(pedidoController));
-
-    /**
-     * @swagger
-     * /api/pedidos/semana:
-     *   get:
-     *     summary: Obtener pedidos de esta semana
-     *     tags: [Pedidos]
-     *     responses:
-     *       200:
-     *         description: Pedidos de esta semana obtenidos exitosamente
-     *       500:
-     *         description: Error interno del servidor
-     */
-    router.get('/semana', pedidoController.obtenerPedidosEstaSemana.bind(pedidoController));
-
-    /**
-     * @swagger
-     * /api/pedidos/mes:
-     *   get:
-     *     summary: Obtener pedidos de este mes
-     *     tags: [Pedidos]
-     *     responses:
-     *       200:
-     *         description: Pedidos de este mes obtenidos exitosamente
-     *       500:
-     *         description: Error interno del servidor
-     */
-    router.get('/mes', pedidoController.obtenerPedidosEsteMes.bind(pedidoController));
-
-    /**
-     * @swagger
-     * /api/pedidos/pendientes:
-     *   get:
-     *     summary: Obtener pedidos pendientes
-     *     tags: [Pedidos]
-     *     responses:
-     *       200:
-     *         description: Pedidos pendientes obtenidos exitosamente
-     *       500:
-     *         description: Error interno del servidor
-     */
-    router.get('/pendientes', pedidoController.obtenerPedidosPendientes.bind(pedidoController));
 
     return router;
 };
