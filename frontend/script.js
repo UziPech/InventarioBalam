@@ -50,6 +50,7 @@ async function initializeApp() {
         actualizarEstadisticas();
         mostrarEstadisticasPedidos();
         mostrarEstadisticasPedidosPorDia();
+        actualizarEstadisticasHistorial();
         
         showToast('Sistema cargado exitosamente', 'success');
     } catch (error) {
@@ -840,8 +841,11 @@ function renderizarHistorial() {
             return `Producto ID: ${item.productoId} (${item.cantidad})`;
         }).join(', ');
         
+        // Formatear número de pedido
+        const numeroPedido = pedido.numeroFormateado || `#${pedido.id}`;
+        
         row.innerHTML = `
-            <td>${pedido.id}</td>
+            <td><span class="pedido-numero">${numeroPedido}</span></td>
             <td>${pedido.cliente}</td>
             <td>${items}</td>
             <td>$${pedido.total.toFixed(2)}</td>
@@ -1199,6 +1203,11 @@ async function cargarPedidosHoy() {
         
         if (data.success) {
             console.log(`📅 Pedidos de hoy: ${data.total} pedidos`);
+            pedidos = data.data; // Actualizar la variable global
+            renderizarHistorial();
+            actualizarEstadisticasHistorial();
+            mostrarEstadisticasPedidosPorDia();
+            showToast(`Cargados ${data.total} pedidos de hoy`, 'success');
             return data.data;
         } else {
             throw new Error(data.message);
@@ -1217,6 +1226,10 @@ async function cargarPedidosEstaSemana() {
         
         if (data.success) {
             console.log(`📅 Pedidos de esta semana: ${data.total} pedidos`);
+            pedidos = data.data; // Actualizar la variable global
+            renderizarHistorial();
+            actualizarEstadisticasHistorial();
+            showToast(`Cargados ${data.total} pedidos de esta semana`, 'success');
             return data.data;
         } else {
             throw new Error(data.message);
@@ -1235,6 +1248,10 @@ async function cargarPedidosEsteMes() {
         
         if (data.success) {
             console.log(`📅 Pedidos de este mes: ${data.total} pedidos`);
+            pedidos = data.data; // Actualizar la variable global
+            renderizarHistorial();
+            actualizarEstadisticasHistorial();
+            showToast(`Cargados ${data.total} pedidos de este mes`, 'success');
             return data.data;
         } else {
             throw new Error(data.message);
@@ -1253,6 +1270,10 @@ async function cargarPedidosPendientes() {
         
         if (data.success) {
             console.log(`⏳ Pedidos pendientes: ${data.total} pedidos`);
+            pedidos = data.data; // Actualizar la variable global
+            renderizarHistorial();
+            actualizarEstadisticasHistorial();
+            showToast(`Cargados ${data.total} pedidos pendientes`, 'success');
             return data.data;
         } else {
             throw new Error(data.message);
@@ -1262,6 +1283,43 @@ async function cargarPedidosPendientes() {
         showToast('Error al cargar pedidos pendientes', 'error');
         return [];
     }
+}
+
+// Función para actualizar estadísticas del historial
+function actualizarEstadisticasHistorial() {
+    const hoy = new Date();
+    const fechaHoy = hoy.toISOString().split('T')[0];
+    
+    // Contar pedidos de hoy
+    const pedidosHoy = pedidos.filter(p => {
+        const fechaPedido = new Date(p.fecha).toISOString().split('T')[0];
+        return fechaPedido === fechaHoy;
+    });
+    
+    // Contar pedidos pendientes
+    const pedidosPendientes = pedidos.filter(p => p.estado === 'pendiente');
+    
+    // Calcular ventas de hoy
+    const ventasHoy = pedidosHoy.reduce((sum, p) => sum + p.total, 0);
+    
+    // Actualizar elementos en la interfaz
+    const pedidosHoyElement = document.getElementById('pedidosHoyCount');
+    const ventasHoyElement = document.getElementById('ventasHoyTotal');
+    const pedidosPendientesElement = document.getElementById('pedidosPendientesCount');
+    
+    if (pedidosHoyElement) {
+        pedidosHoyElement.textContent = pedidosHoy.length;
+    }
+    
+    if (ventasHoyElement) {
+        ventasHoyElement.textContent = '$' + ventasHoy.toFixed(2);
+    }
+    
+    if (pedidosPendientesElement) {
+        pedidosPendientesElement.textContent = pedidosPendientes.length;
+    }
+    
+    console.log(`📊 Estadísticas actualizadas - Hoy: ${pedidosHoy.length} pedidos, $${ventasHoy.toFixed(2)} ventas, ${pedidosPendientes.length} pendientes`);
 }
 
 // Función para mostrar estadísticas de pedidos por día
