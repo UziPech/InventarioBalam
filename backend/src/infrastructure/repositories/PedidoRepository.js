@@ -62,15 +62,31 @@ class PedidoRepository extends IPedidoRepository {
         try {
             const pedidosData = await this.database.getPedidos();
             
-            // Generar nuevo ID
-            const nuevoId = Math.max(...pedidosData.map(p => p.id), 0) + 1;
+            // Generar ID por día (reiniciar cada día)
+            const hoy = new Date();
+            const fechaHoy = hoy.toISOString().split('T')[0]; // YYYY-MM-DD
+            
+            // Obtener pedidos de hoy
+            const pedidosHoy = pedidosData.filter(p => {
+                const fechaPedido = new Date(p.fecha).toISOString().split('T')[0];
+                return fechaPedido === fechaHoy;
+            });
+            
+            // Generar nuevo ID para hoy
+            const nuevoId = pedidosHoy.length + 1;
             pedido.id = nuevoId;
             
             // Agregar fecha
             pedido.fecha = new Date();
             
+            // Agregar información adicional para tracking
+            pedido.numeroDia = nuevoId;
+            pedido.fechaCreacion = fechaHoy;
+            
             pedidosData.push(pedido.toJSON());
             await this.database.savePedidos(pedidosData);
+            
+            console.log(`📦 Pedido #${nuevoId} creado para ${fechaHoy}`);
             
             return pedido;
         } catch (error) {

@@ -81,7 +81,34 @@ class Pedido {
             items: this.items,
             total: this.total,
             fecha: this.fecha,
-            estado: this.estado
+            estado: this.estado,
+            numeroDia: this.numeroDia || this.id,
+            fechaCreacion: this.fechaCreacion || this.fecha.toISOString().split('T')[0]
+        };
+    }
+
+    // Método para obtener el número de pedido formateado
+    obtenerNumeroFormateado() {
+        const fecha = new Date(this.fecha);
+        const fechaStr = fecha.toLocaleDateString('es-ES', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        }).replace(/\//g, '');
+        
+        return `${fechaStr}-${this.id.toString().padStart(3, '0')}`;
+    }
+
+    // Método para obtener información del pedido
+    obtenerInformacion() {
+        return {
+            numero: this.id,
+            numeroFormateado: this.obtenerNumeroFormateado(),
+            fecha: this.fecha,
+            cliente: this.cliente,
+            total: this.total,
+            estado: this.estado,
+            cantidadItems: this.obtenerCantidadItems()
         };
     }
 }

@@ -321,5 +321,61 @@ module.exports = (pedidoController) => {
      */
     router.get('/estadisticas', pedidoController.obtenerEstadisticas.bind(pedidoController));
 
+    /**
+     * @swagger
+     * /api/pedidos/hoy:
+     *   get:
+     *     summary: Obtener pedidos de hoy
+     *     tags: [Pedidos]
+     *     responses:
+     *       200:
+     *         description: Pedidos de hoy obtenidos exitosamente
+     *       500:
+     *         description: Error interno del servidor
+     */
+    router.get('/hoy', pedidoController.obtenerPedidosHoy.bind(pedidoController));
+
+    /**
+     * @swagger
+     * /api/pedidos/semana:
+     *   get:
+     *     summary: Obtener pedidos de esta semana
+     *     tags: [Pedidos]
+     *     responses:
+     *       200:
+     *         description: Pedidos de esta semana obtenidos exitosamente
+     *       500:
+     *         description: Error interno del servidor
+     */
+    router.get('/semana', pedidoController.obtenerPedidosEstaSemana.bind(pedidoController));
+
+    /**
+     * @swagger
+     * /api/pedidos/mes:
+     *   get:
+     *     summary: Obtener pedidos de este mes
+     *     tags: [Pedidos]
+     *     responses:
+     *       200:
+     *         description: Pedidos de este mes obtenidos exitosamente
+     *       500:
+     *         description: Error interno del servidor
+     */
+    router.get('/mes', pedidoController.obtenerPedidosEsteMes.bind(pedidoController));
+
+    /**
+     * @swagger
+     * /api/pedidos/pendientes:
+     *   get:
+     *     summary: Obtener pedidos pendientes
+     *     tags: [Pedidos]
+     *     responses:
+     *       200:
+     *         description: Pedidos pendientes obtenidos exitosamente
+     *       500:
+     *         description: Error interno del servidor
+     */
+    router.get('/pendientes', pedidoController.obtenerPedidosPendientes.bind(pedidoController));
+
     return router;
 };

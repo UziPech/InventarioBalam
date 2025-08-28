@@ -244,6 +244,124 @@ class PedidoController {
             });
         }
     }
+
+    /**
+     * Obtener pedidos de hoy
+     * @param {Object} req - Request de Express
+     * @param {Object} res - Response de Express
+     */
+    async obtenerPedidosHoy(req, res) {
+        try {
+            const hoy = new Date();
+            const inicioDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+            const finDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 23, 59, 59);
+            
+            const pedidos = await this.pedidoRepository.obtenerPorFecha(inicioDia, finDia);
+            
+            res.json({
+                success: true,
+                data: pedidos.map(p => p.toJSON()),
+                message: `Pedidos de hoy (${hoy.toLocaleDateString('es-ES')})`,
+                total: pedidos.length,
+                fecha: hoy.toISOString().split('T')[0]
+            });
+        } catch (error) {
+            res.status(500).json({
+                success: false,
+                error: error.message,
+                message: 'Error al obtener pedidos de hoy'
+            });
+        }
+    }
+
+    /**
+     * Obtener pedidos de esta semana
+     * @param {Object} req - Request de Express
+     * @param {Object} res - Response de Express
+     */
+    async obtenerPedidosEstaSemana(req, res) {
+        try {
+            const hoy = new Date();
+            const inicioSemana = new Date(hoy);
+            inicioSemana.setDate(hoy.getDate() - hoy.getDay()); // Domingo
+            inicioSemana.setHours(0, 0, 0, 0);
+            
+            const finSemana = new Date(inicioSemana);
+            finSemana.setDate(inicioSemana.getDate() + 6); // Sábado
+            finSemana.setHours(23, 59, 59, 999);
+            
+            const pedidos = await this.pedidoRepository.obtenerPorFecha(inicioSemana, finSemana);
+            
+            res.json({
+                success: true,
+                data: pedidos.map(p => p.toJSON()),
+                message: 'Pedidos de esta semana',
+                total: pedidos.length,
+                fechaInicio: inicioSemana.toISOString().split('T')[0],
+                fechaFin: finSemana.toISOString().split('T')[0]
+            });
+        } catch (error) {
+            res.status(500).json({
+                success: false,
+                error: error.message,
+                message: 'Error al obtener pedidos de esta semana'
+            });
+        }
+    }
+
+    /**
+     * Obtener pedidos de este mes
+     * @param {Object} req - Request de Express
+     * @param {Object} res - Response de Express
+     */
+    async obtenerPedidosEsteMes(req, res) {
+        try {
+            const hoy = new Date();
+            const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+            const finMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0, 23, 59, 59, 999);
+            
+            const pedidos = await this.pedidoRepository.obtenerPorFecha(inicioMes, finMes);
+            
+            res.json({
+                success: true,
+                data: pedidos.map(p => p.toJSON()),
+                message: `Pedidos de ${hoy.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}`,
+                total: pedidos.length,
+                fechaInicio: inicioMes.toISOString().split('T')[0],
+                fechaFin: finMes.toISOString().split('T')[0]
+            });
+        } catch (error) {
+            res.status(500).json({
+                success: false,
+                error: error.message,
+                message: 'Error al obtener pedidos de este mes'
+            });
+        }
+    }
+
+    /**
+     * Obtener pedidos pendientes
+     * @param {Object} req - Request de Express
+     * @param {Object} res - Response of Express
+     */
+    async obtenerPedidosPendientes(req, res) {
+        try {
+            const pedidos = await this.pedidoRepository.obtenerPorEstado('pendiente');
+            
+            res.json({
+                success: true,
+                data: pedidos.map(p => p.toJSON()),
+                message: 'Pedidos pendientes',
+                total: pedidos.length
+            });
+        } catch (error) {
+            res.status(500).json({
+                success: false,
+                error: error.message,
+                message: 'Error al obtener pedidos pendientes'
+            });
+        }
+    }
 }
 
 module.exports = PedidoController;

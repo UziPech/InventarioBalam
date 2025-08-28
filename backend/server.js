@@ -6,6 +6,7 @@ const swaggerJsdoc = require('swagger-jsdoc');
 
 // Importar repositorios
 const JsonDatabase = require('./src/infrastructure/database/JsonDatabase');
+const MongoDatabase = require('./src/infrastructure/database/MongoDatabase');
 const ProductoRepository = require('./src/infrastructure/repositories/ProductoRepository');
 const PedidoRepository = require('./src/infrastructure/repositories/PedidoRepository');
 const ProductoMenuRepository = require('./src/infrastructure/repositories/ProductoMenuRepository');
@@ -96,7 +97,23 @@ const specs = swaggerJsdoc(swaggerOptions);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
 // Inicializar dependencias
-const database = new JsonDatabase();
+let database;
+
+// Usar MongoDB en producción, JSON en desarrollo
+if (process.env.NODE_ENV === 'production' && process.env.MONGODB_URI) {
+    console.log('🔗 Conectando a MongoDB en producción...');
+    database = new MongoDatabase();
+    database.connect().then(() => {
+        console.log('✅ Conectado a MongoDB exitosamente');
+    }).catch(err => {
+        console.error('❌ Error conectando a MongoDB, usando JSON como fallback:', err.message);
+        database = new JsonDatabase();
+    });
+} else {
+    console.log('📁 Usando base de datos JSON en desarrollo...');
+    database = new JsonDatabase();
+}
+
 const productoRepository = new ProductoRepository(database);
 const pedidoRepository = new PedidoRepository(database);
 const productoMenuRepository = new ProductoMenuRepository(database);

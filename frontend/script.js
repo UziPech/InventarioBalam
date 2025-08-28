@@ -38,8 +38,18 @@ async function initializeApp() {
             cargarStockCritico()
         ]);
         
+        // Cargar estadísticas de pedidos
+        await Promise.all([
+            cargarPedidosHoy(),
+            cargarPedidosEstaSemana(),
+            cargarPedidosEsteMes(),
+            cargarPedidosPendientes()
+        ]);
+        
         // Mostrar estadísticas locales
         actualizarEstadisticas();
+        mostrarEstadisticasPedidos();
+        mostrarEstadisticasPedidosPorDia();
         
         showToast('Sistema cargado exitosamente', 'success');
     } catch (error) {
@@ -1180,6 +1190,143 @@ function mostrarCambiosInventario(productosAnteriores, productosNuevos) {
         ).join(', ');
         showToast(`Inventario actualizado: ${mensaje}`, 'info');
     }
+}
+
+// Cargar pedidos de hoy
+async function cargarPedidosHoy() {
+    try {
+        const data = await apiRequest('/pedidos/hoy');
+        
+        if (data.success) {
+            console.log(`📅 Pedidos de hoy: ${data.total} pedidos`);
+            return data.data;
+        } else {
+            throw new Error(data.message);
+        }
+    } catch (error) {
+        console.error('Error al cargar pedidos de hoy:', error);
+        showToast('Error al cargar pedidos de hoy', 'error');
+        return [];
+    }
+}
+
+// Cargar pedidos de esta semana
+async function cargarPedidosEstaSemana() {
+    try {
+        const data = await apiRequest('/pedidos/semana');
+        
+        if (data.success) {
+            console.log(`📅 Pedidos de esta semana: ${data.total} pedidos`);
+            return data.data;
+        } else {
+            throw new Error(data.message);
+        }
+    } catch (error) {
+        console.error('Error al cargar pedidos de esta semana:', error);
+        showToast('Error al cargar pedidos de esta semana', 'error');
+        return [];
+    }
+}
+
+// Cargar pedidos de este mes
+async function cargarPedidosEsteMes() {
+    try {
+        const data = await apiRequest('/pedidos/mes');
+        
+        if (data.success) {
+            console.log(`📅 Pedidos de este mes: ${data.total} pedidos`);
+            return data.data;
+        } else {
+            throw new Error(data.message);
+        }
+    } catch (error) {
+        console.error('Error al cargar pedidos de este mes:', error);
+        showToast('Error al cargar pedidos de este mes', 'error');
+        return [];
+    }
+}
+
+// Cargar pedidos pendientes
+async function cargarPedidosPendientes() {
+    try {
+        const data = await apiRequest('/pedidos/pendientes');
+        
+        if (data.success) {
+            console.log(`⏳ Pedidos pendientes: ${data.total} pedidos`);
+            return data.data;
+        } else {
+            throw new Error(data.message);
+        }
+    } catch (error) {
+        console.error('Error al cargar pedidos pendientes:', error);
+        showToast('Error al cargar pedidos pendientes', 'error');
+        return [];
+    }
+}
+
+// Función para mostrar estadísticas de pedidos por día
+function mostrarEstadisticasPedidosPorDia() {
+    const hoy = new Date();
+    const fechaHoy = hoy.toLocaleDateString('es-ES', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+    
+    // Contar pedidos de hoy
+    const pedidosHoy = pedidos.filter(p => {
+        const fechaPedido = new Date(p.fecha).toISOString().split('T')[0];
+        const fechaActual = hoy.toISOString().split('T')[0];
+        return fechaPedido === fechaActual;
+    });
+    
+    // Mostrar información en consola
+    console.log(`📊 Estadísticas de pedidos - ${fechaHoy}`);
+    console.log(`📦 Pedidos de hoy: ${pedidosHoy.length}`);
+    
+    if (pedidosHoy.length > 0) {
+        console.log('📋 Lista de pedidos de hoy:');
+        pedidosHoy.forEach(pedido => {
+            const hora = new Date(pedido.fecha).toLocaleTimeString('es-ES', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            console.log(`   🍔 Pedido #${pedido.id} - ${pedido.cliente} - $${pedido.total.toFixed(2)} - ${hora}`);
+        });
+    }
+    
+    // Actualizar información en el dashboard si existe
+    const pedidosHoyElement = document.getElementById('pedidosHoy');
+    if (pedidosHoyElement) {
+        pedidosHoyElement.textContent = pedidosHoy.length;
+    }
+    
+    const totalVentasHoy = pedidosHoy.reduce((sum, p) => sum + p.total, 0);
+    const ventasHoyElement = document.getElementById('ventasHoy');
+    if (ventasHoyElement) {
+        ventasHoyElement.textContent = '$' + totalVentasHoy.toFixed(2);
+    }
+}
+
+// Función para mostrar estadísticas de pedidos
+function mostrarEstadisticasPedidos() {
+    const hoy = new Date();
+    const fechaHoy = hoy.toLocaleDateString('es-ES', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+    
+    // Actualizar información en el dashboard
+    const fechaElement = document.getElementById('fechaActual');
+    if (fechaElement) {
+        fechaElement.textContent = fechaHoy;
+    }
+    
+    // Mostrar información de pedidos recientes
+    console.log(`📊 Estadísticas de pedidos - ${fechaHoy}`);
 }
 
 // Función para formatear cantidades según la unidad

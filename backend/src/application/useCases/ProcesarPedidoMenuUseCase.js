@@ -104,6 +104,12 @@ class ProcesarPedidoMenuUseCase {
      * @param {Object} datos - Datos a validar
      */
     validarDatos(datos) {
+        // Validar que datos exista
+        if (!datos) {
+            throw new Error('Los datos del pedido son requeridos');
+        }
+
+        // Validar items
         if (!datos.items || !Array.isArray(datos.items) || datos.items.length === 0) {
             throw new Error('El pedido debe contener al menos un item');
         }
@@ -117,6 +123,11 @@ class ProcesarPedidoMenuUseCase {
                 throw new Error(`El item ${index + 1} debe tener una cantidad mayor a 0`);
             }
         });
+
+        // Validar cliente (opcional, pero si se proporciona debe ser string)
+        if (datos.cliente !== undefined && typeof datos.cliente !== 'string') {
+            throw new Error('El cliente debe ser una cadena de texto');
+        }
     }
 
     /**
