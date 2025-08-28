@@ -34,10 +34,21 @@ class ProcesarPedidoMenuUseCase {
             );
 
             if (!verificacionStock.disponible) {
+                const ingredientesFaltantes = verificacionStock.ingredientesFaltantes;
+                const mensajeDetallado = ingredientesFaltantes.map(item => {
+                    if (item.nombre === 'Producto del menú no encontrado') {
+                        return `• Producto del menú con ID ${item.productoId} no existe`;
+                    } else if (item.nombre === 'Ingrediente no encontrado en inventario') {
+                        return `• Ingrediente con ID ${item.productoId} no está en el inventario`;
+                    } else {
+                        return `• ${item.nombre}: necesita ${item.cantidadNecesaria} ${item.unidad || 'unidades'}, disponible ${item.cantidadDisponible} ${item.unidad || 'unidades'}`;
+                    }
+                }).join('\n');
+
                 return {
                     success: false,
                     error: 'Stock insuficiente',
-                    message: 'No hay suficientes ingredientes para procesar el pedido',
+                    message: 'No hay suficientes ingredientes para procesar el pedido. Detalles:\n' + mensajeDetallado,
                     detalles: verificacionStock.ingredientesFaltantes
                 };
             }
@@ -137,12 +148,20 @@ class ProcesarPedidoMenuUseCase {
      * @param {Array} productosInventario - Lista de productos del inventario
      */
     async verificarStockDisponible(items, productosMenu, productosInventario) {
+        console.log('🔍 Verificando stock disponible...');
+        console.log('📦 Items del pedido:', items);
+        console.log('🍔 Productos del menú:', productosMenu.map(p => ({ id: p.id, nombre: p.nombre })));
+        console.log('📋 Productos del inventario:', productosInventario.map(p => ({ id: p.id, nombre: p.nombre, cantidad: p.cantidad })));
+        
         const ingredientesFaltantes = [];
         const ingredientesSuficientes = [];
 
         for (const item of items) {
+            console.log(`🔍 Procesando item:`, item);
+            
             const productoMenu = productosMenu.find(p => p.id === item.productoId);
             if (!productoMenu) {
+                console.log(`❌ Producto del menú no encontrado: ID ${item.productoId}`);
                 ingredientesFaltantes.push({
                     productoId: item.productoId,
                     nombre: 'Producto del menú no encontrado',
@@ -152,12 +171,24 @@ class ProcesarPedidoMenuUseCase {
                 continue;
             }
 
+            console.log(`✅ Producto del menú encontrado: ${productoMenu.nombre} (ID: ${productoMenu.id})`);
+            console.log(`📋 Ingredientes de ${productoMenu.nombre}:`, productoMenu.ingredientes);
+
             // Verificar cada ingrediente del producto del menú
             for (const ingrediente of productoMenu.ingredientes) {
+                console.log(`🔍 Verificando ingrediente:`, ingrediente);
+                
                 const productoInventario = productosInventario.find(p => p.id === ingrediente.productoId);
                 const cantidadNecesaria = ingrediente.cantidad * item.cantidad;
 
+                console.log(`📦 Producto del inventario encontrado:`, productoInventario ? {
+                    id: productoInventario.id,
+                    nombre: productoInventario.nombre,
+                    cantidad: productoInventario.cantidad
+                } : 'No encontrado');
+
                 if (!productoInventario) {
+                    console.log(`❌ Ingrediente no encontrado en inventario: ID ${ingrediente.productoId}`);
                     ingredientesFaltantes.push({
                         productoId: ingrediente.productoId,
                         nombre: 'Ingrediente no encontrado en inventario',
@@ -165,6 +196,7 @@ class ProcesarPedidoMenuUseCase {
                         cantidadDisponible: 0
                     });
                 } else if (productoInventario.cantidad < cantidadNecesaria) {
+                    console.log(`❌ Stock insuficiente: ${productoInventario.nombre} - Necesario: ${cantidadNecesaria}, Disponible: ${productoInventario.cantidad}`);
                     ingredientesFaltantes.push({
                         productoId: ingrediente.productoId,
                         nombre: productoInventario.nombre,
@@ -172,6 +204,7 @@ class ProcesarPedidoMenuUseCase {
                         cantidadDisponible: productoInventario.cantidad
                     });
                 } else {
+                    console.log(`✅ Stock suficiente: ${productoInventario.nombre} - Necesario: ${cantidadNecesaria}, Disponible: ${productoInventario.cantidad}`);
                     ingredientesSuficientes.push({
                         productoId: ingrediente.productoId,
                         nombre: productoInventario.nombre,
@@ -181,6 +214,10 @@ class ProcesarPedidoMenuUseCase {
                 }
             }
         }
+
+        console.log('📊 Resultado de verificación:');
+        console.log('❌ Ingredientes faltantes:', ingredientesFaltantes);
+        console.log('✅ Ingredientes suficientes:', ingredientesSuficientes);
 
         return {
             disponible: ingredientesFaltantes.length === 0,

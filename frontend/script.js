@@ -729,10 +729,19 @@ async function crearPedido() {
         return;
     }
     
-    const items = Object.entries(pedidoActual).map(([productoMenuId, cantidad]) => ({
-        productoId: parseInt(productoMenuId),
-        cantidad: cantidad
-    }));
+    // Debug: mostrar productos del menú disponibles
+    console.log('🍔 Productos del menú disponibles:', productosMenu);
+    console.log('🛒 Pedido actual:', pedidoActual);
+    
+    const items = Object.entries(pedidoActual).map(([productoMenuId, cantidad]) => {
+        const productoMenu = productosMenu.find(p => p.id === parseInt(productoMenuId));
+        console.log(`📦 Procesando producto ID ${productoMenuId}:`, productoMenu);
+        
+        return {
+            productoId: parseInt(productoMenuId),
+            cantidad: cantidad
+        };
+    });
     
     showLoading();
     
@@ -740,7 +749,7 @@ async function crearPedido() {
     const productosAnteriores = [...productos];
     
     // Debug: mostrar qué se está enviando
-    console.log('Enviando pedido:', { cliente, items });
+    console.log('🚀 Enviando pedido:', { cliente, items });
     
     try {
         const data = await apiRequest('/pedidos/menu', {
@@ -782,7 +791,16 @@ async function crearPedido() {
         }
     } catch (error) {
         console.error('Error al crear pedido:', error);
-        showToast('Error al crear pedido: ' + error.message, 'error');
+        
+        // Mejorar mensaje de error para el usuario
+        let mensajeError = error.message;
+        if (error.message && error.message.includes('Stock insuficiente')) {
+            mensajeError = '❌ No hay suficientes ingredientes en el inventario para procesar este pedido.\n\nPor favor:\n• Verifica el stock disponible en el inventario\n• Agrega más ingredientes si es necesario\n• Intenta con un pedido más pequeño';
+        } else if (error.message && error.message.includes('Producto del menú no encontrado')) {
+            mensajeError = '❌ Uno de los productos seleccionados no está disponible en el menú.\n\nPor favor:\n• Verifica que los productos estén activos\n• Recarga la página si es necesario';
+        }
+        
+        showToast(mensajeError, 'error');
     } finally {
         hideLoading();
     }
@@ -1407,4 +1425,4 @@ function formatearCantidad(cantidad, unidad) {
     }
     // Para otros casos, mostrar 2 decimales
     return cantidad.toFixed(2);
-}
+} 

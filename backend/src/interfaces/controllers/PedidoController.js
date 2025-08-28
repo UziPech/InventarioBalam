@@ -104,10 +104,17 @@ class PedidoController {
             }
         } catch (error) {
             console.error('❌ Error en crearConMenu:', error);
+            
+            // Mejorar mensaje de error para el usuario
+            let mensajeError = 'Error al crear pedido con productos del menú';
+            if (error.message && error.message.includes('Stock insuficiente')) {
+                mensajeError = 'No hay suficientes ingredientes en el inventario para procesar este pedido. Por favor, verifica el stock disponible.';
+            }
+            
             res.status(500).json({
                 success: false,
                 error: error.message,
-                message: 'Error al crear pedido con productos del menú'
+                message: mensajeError
             });
         }
     }
