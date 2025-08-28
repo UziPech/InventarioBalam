@@ -65,11 +65,22 @@ async function apiRequest(endpoint, options = {}) {
         
         clearTimeout(timeoutId);
         
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        // Intentar parsear la respuesta JSON
+        let data;
+        try {
+            data = await response.json();
+        } catch (parseError) {
+            // Si no se puede parsear JSON, usar el texto de la respuesta
+            const text = await response.text();
+            throw new Error(`HTTP ${response.status}: ${text}`);
         }
         
-        const data = await response.json();
+        // Si la respuesta no es exitosa, lanzar error con el mensaje del servidor
+        if (!response.ok) {
+            const errorMessage = data.message || data.error || `HTTP ${response.status}: ${response.statusText}`;
+            throw new Error(errorMessage);
+        }
+        
         return data;
     } catch (error) {
         if (error.name === 'AbortError') {
