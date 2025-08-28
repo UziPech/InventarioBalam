@@ -1,4 +1,5 @@
 // Configuración del Frontend - Inventario Balam
+// Versión: 1.0.1 - Fix para mensajes de error detallados
 const CONFIG = {
     // Configuración de la API
     API: {
