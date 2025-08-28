@@ -42,12 +42,20 @@ class PedidoRepository extends IPedidoRepository {
                 return null;
             }
 
-            return new Pedido(
+            const pedido = new Pedido(
                 pedidoData.id,
                 pedidoData.cliente,
                 pedidoData.items,
                 pedidoData.total
             );
+            
+            // Preservar información adicional
+            if (pedidoData.fecha) pedido.fecha = new Date(pedidoData.fecha);
+            if (pedidoData.estado) pedido.estado = pedidoData.estado;
+            if (pedidoData.numeroDia) pedido.numeroDia = pedidoData.numeroDia;
+            if (pedidoData.fechaCreacion) pedido.fechaCreacion = pedidoData.fechaCreacion;
+            
+            return pedido;
         } catch (error) {
             throw new Error(`Error al obtener pedido por ID: ${error.message}`);
         }
