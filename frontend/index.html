@@ -301,6 +301,50 @@
         </div>
     </div>
 
+    <!-- Modal Editar Producto -->
+    <div id="editarProducto" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-edit"></i> Editar Producto del Inventario</h3>
+                <span class="close" onclick="closeModal('editarProducto')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="editProductoForm">
+                    <div class="form-group">
+                        <label for="editNombreProducto">Nombre del Producto:</label>
+                        <input type="text" id="editNombreProducto" required class="form-input">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editCantidadProducto">Cantidad:</label>
+                            <input type="number" id="editCantidadProducto" step="0.01" required class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label for="editUnidadProducto">Unidad:</label>
+                            <select id="editUnidadProducto" required class="form-input">
+                                <option value="piezas">Piezas</option>
+                                <option value="kg">Kilogramos</option>
+                                <option value="g">Gramos</option>
+                                <option value="l">Litros</option>
+                                <option value="ml">Mililitros</option>
+                                <option value="rebanadas">Rebanadas</option>
+                                <option value="botellas">Botellas</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="editPrecioProducto">Precio de Compra:</label>
+                        <input type="number" id="editPrecioProducto" step="0.01" required class="form-input">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('editarProducto')">Cancelar</button>
+                <button class="btn btn-primary" onclick="actualizarProducto()">Actualizar Producto</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Agregar Producto al Menú -->
     <div id="agregarProductoMenu" class="modal">
         <div class="modal-content large">
@@ -324,7 +368,7 @@
                     </div>
                     <div class="form-group">
                         <label>Ingredientes:</label>
-                        <div id="ingredientesContainer">
+                        <div id="ingredientesContainer" class="ingredientes-container">
                             <div class="ingrediente-item">
                                 <select class="form-input ingrediente-select">
                                     <option value="">Seleccionar ingrediente...</option>

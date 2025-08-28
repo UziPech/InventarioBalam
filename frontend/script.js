@@ -62,6 +62,21 @@ function setupEventListeners() {
 
     // Búsqueda en inventario
     document.getElementById('searchInventario').addEventListener('input', filtrarInventario);
+
+    // Event delegation para botones de acción en inventario
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('[data-action]')) {
+            const button = e.target.closest('[data-action]');
+            const action = button.dataset.action;
+            const id = parseInt(button.dataset.id);
+            
+            if (action === 'editar') {
+                editarProducto(id);
+            } else if (action === 'eliminar') {
+                eliminarProducto(id);
+            }
+        }
+    });
 }
 
 // Cambiar de tab
@@ -116,10 +131,13 @@ function renderizarInventario() {
     
     productos.forEach(producto => {
         const row = document.createElement('tr');
+        // Formatear cantidad según la unidad
+        const cantidadFormateada = formatearCantidad(producto.cantidad, producto.unidad);
+        
         row.innerHTML = `
             <td>${producto.id}</td>
             <td>${producto.nombre}</td>
-            <td>${producto.cantidad} ${producto.unidad}</td>
+            <td>${cantidadFormateada}</td>
             <td>${producto.unidad}</td>
             <td>$${producto.precio.toFixed(2)}</td>
             <td>
@@ -128,10 +146,10 @@ function renderizarInventario() {
                 </span>
             </td>
             <td>
-                <button class="btn btn-secondary btn-small" onclick="editarProducto(${producto.id})">
+                <button class="btn btn-secondary btn-small" data-action="editar" data-id="${producto.id}">
                     <i class="fas fa-edit"></i>
                 </button>
-                <button class="btn btn-danger btn-small" onclick="eliminarProducto(${producto.id})">
+                <button class="btn btn-danger btn-small" data-action="eliminar" data-id="${producto.id}">
                     <i class="fas fa-trash"></i>
                 </button>
             </td>
@@ -198,6 +216,97 @@ async function agregarProducto() {
     }
 }
 
+// Editar producto
+async function editarProducto(id) {
+    const producto = productos.find(p => p.id === id);
+    if (!producto) {
+        showToast('Producto no encontrado', 'error');
+        return;
+    }
+    
+    // Llenar el formulario con los datos del producto
+    document.getElementById('editNombreProducto').value = producto.nombre;
+    document.getElementById('editCantidadProducto').value = producto.cantidad;
+    document.getElementById('editUnidadProducto').value = producto.unidad;
+    document.getElementById('editPrecioProducto').value = producto.precio;
+    
+    // Guardar el ID del producto a editar
+    document.getElementById('editProductoForm').dataset.productoId = id;
+    
+    // Abrir el modal de edición
+    openModal('editarProducto');
+}
+
+// Actualizar producto
+async function actualizarProducto() {
+    const id = parseInt(document.getElementById('editProductoForm').dataset.productoId);
+    const nombre = document.getElementById('editNombreProducto').value;
+    const cantidad = parseFloat(document.getElementById('editCantidadProducto').value);
+    const unidad = document.getElementById('editUnidadProducto').value;
+    const precio = parseFloat(document.getElementById('editPrecioProducto').value);
+    
+    if (!nombre || !cantidad || !unidad || !precio) {
+        showToast('Por favor complete todos los campos', 'warning');
+        return;
+    }
+    
+    showLoading();
+    
+    try {
+        const data = await apiRequest(`/productos/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                nombre,
+                cantidad,
+                unidad,
+                precio
+            })
+        });
+        
+        if (data.success) {
+            showToast('Producto actualizado exitosamente', 'success');
+            closeModal('editarProducto');
+            await cargarInventario();
+            actualizarEstadisticas();
+        } else {
+            throw new Error(data.message);
+        }
+    } catch (error) {
+        console.error('Error al actualizar producto:', error);
+        showToast('Error al actualizar producto', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+// Eliminar producto
+async function eliminarProducto(id) {
+    if (!confirm('¿Está seguro de que desea eliminar este producto?')) {
+        return;
+    }
+    
+    showLoading();
+    
+    try {
+        const data = await apiRequest(`/productos/${id}`, {
+            method: 'DELETE'
+        });
+        
+        if (data.success) {
+            showToast('Producto eliminado exitosamente', 'success');
+            await cargarInventario();
+            actualizarEstadisticas();
+        } else {
+            throw new Error(data.message);
+        }
+    } catch (error) {
+        console.error('Error al eliminar producto:', error);
+        showToast('Error al eliminar producto', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
 // ==================== MENÚ ====================
 
 // Cargar menú
@@ -207,6 +316,12 @@ async function cargarMenu() {
         
         if (data.success) {
             productosMenu = data.data;
+            
+            // Asegurar que productos esté cargado antes de renderizar
+            if (productos.length === 0) {
+                await cargarInventario();
+            }
+            
             renderizarMenu();
             renderizarMenuItems();
         } else {
@@ -223,9 +338,28 @@ function renderizarMenu() {
     const grid = document.getElementById('menuGrid');
     grid.innerHTML = '';
     
+    // Debug: mostrar información de los datos
+    console.log('Productos del inventario disponibles:', productos);
+    console.log('Productos del menú a renderizar:', productosMenu);
+    
     productosMenu.forEach(producto => {
         const card = document.createElement('div');
         card.className = 'menu-item';
+        
+        // Mejorar la visualización de ingredientes
+        const ingredientesTexto = producto.ingredientes.map(i => {
+            console.log('Procesando ingrediente:', i); // Debug
+            
+            const productoInventario = productos.find(p => p.id === i.productoId);
+            console.log('Producto encontrado en inventario:', productoInventario); // Debug
+            
+            if (productoInventario) {
+                return `${i.cantidad} ${productoInventario.unidad} de ${productoInventario.nombre}`;
+            } else {
+                return `${i.cantidad} unidades de Producto ID: ${i.productoId}`;
+            }
+        }).join(', ');
+        
         card.innerHTML = `
             <div class="menu-item-header">
                 <div class="menu-item-title">${producto.nombre}</div>
@@ -233,15 +367,18 @@ function renderizarMenu() {
             </div>
             <div class="menu-item-description">${producto.descripcion || 'Sin descripción'}</div>
             <div class="menu-item-ingredients">
-                <strong>Ingredientes:</strong> ${producto.ingredientes.map(i => `${i.cantidad} ${i.unidad}`).join(', ')}
+                <strong>Ingredientes:</strong> ${ingredientesTexto}
             </div>
             <div class="menu-item-actions">
                 <button class="btn btn-secondary btn-small" onclick="editarProductoMenu(${producto.id})">
                     <i class="fas fa-edit"></i> Editar
                 </button>
-                <button class="btn btn-danger btn-small" onclick="toggleProductoMenu(${producto.id}, ${!producto.activo})">
+                <button class="btn btn-warning btn-small" onclick="toggleProductoMenu(${producto.id}, ${!producto.activo})">
                     <i class="fas fa-${producto.activo ? 'eye-slash' : 'eye'}"></i>
                     ${producto.activo ? 'Desactivar' : 'Activar'}
+                </button>
+                <button class="btn btn-danger btn-small" onclick="eliminarProductoMenu(${producto.id})">
+                    <i class="fas fa-trash"></i> Eliminar
                 </button>
             </div>
         `;
@@ -334,22 +471,187 @@ async function agregarProductoMenu() {
     }
 }
 
+// Editar producto del menú
+async function editarProductoMenu(id) {
+    const producto = productosMenu.find(p => p.id === id);
+    if (!producto) {
+        showToast('Producto no encontrado', 'error');
+        return;
+    }
+    
+    // Llenar el formulario con los datos del producto
+    document.getElementById('nombreProductoMenu').value = producto.nombre;
+    document.getElementById('descripcionProductoMenu').value = producto.descripcion || '';
+    document.getElementById('precioProductoMenu').value = producto.precio;
+    
+    // Limpiar ingredientes existentes
+    const container = document.getElementById('ingredientesContainer');
+    container.innerHTML = '';
+    
+    // Agregar ingredientes del producto
+    producto.ingredientes.forEach(ingrediente => {
+        agregarIngrediente(ingrediente.productoId, ingrediente.cantidad);
+    });
+    
+    // Cambiar el botón para actualizar
+    const submitBtn = document.querySelector('#agregarProductoMenu .modal-footer .btn-primary');
+    if (submitBtn) {
+        submitBtn.textContent = 'Actualizar Producto';
+        submitBtn.onclick = () => actualizarProductoMenu(id);
+        console.log('Botón cambiado a modo edición para producto ID:', id);
+    }
+    
+    openModal('agregarProductoMenu');
+}
+
+// Actualizar producto del menú
+async function actualizarProductoMenu(id) {
+    const nombre = document.getElementById('nombreProductoMenu').value;
+    const descripcion = document.getElementById('descripcionProductoMenu').value;
+    const precio = parseFloat(document.getElementById('precioProductoMenu').value);
+    
+    if (!nombre || !precio) {
+        showToast('Por favor complete los campos requeridos', 'warning');
+        return;
+    }
+    
+    // Obtener ingredientes
+    const ingredientes = [];
+    const ingredientesItems = document.querySelectorAll('.ingrediente-item');
+    
+    ingredientesItems.forEach(item => {
+        const select = item.querySelector('.ingrediente-select');
+        const cantidad = parseFloat(item.querySelector('.ingrediente-cantidad').value);
+        
+        if (select.value && cantidad > 0) {
+            ingredientes.push({
+                productoId: parseInt(select.value),
+                cantidad: cantidad
+            });
+        }
+    });
+    
+    if (ingredientes.length === 0) {
+        showToast('Debe agregar al menos un ingrediente', 'warning');
+        return;
+    }
+    
+    showLoading();
+    
+    try {
+        const data = await apiRequest(`/productos-menu/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                nombre,
+                descripcion,
+                precio,
+                ingredientes
+            })
+        });
+        
+        if (data.success) {
+            showToast('Producto actualizado exitosamente', 'success');
+            closeModal('agregarProductoMenu');
+            document.getElementById('formAgregarProductoMenu').reset();
+            
+            // Restaurar el botón original
+            const submitBtn = document.querySelector('#agregarProductoMenu .modal-footer .btn-primary');
+            submitBtn.textContent = 'Agregar al Menú';
+            submitBtn.onclick = agregarProductoMenu;
+            
+            await cargarMenu();
+            actualizarEstadisticas();
+        } else {
+            throw new Error(data.message);
+        }
+    } catch (error) {
+        console.error('Error al actualizar producto del menú:', error);
+        showToast('Error al actualizar producto del menú', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+// Cambiar estado de producto del menú (activar/desactivar)
+async function toggleProductoMenu(id, activo) {
+    showLoading();
+    
+    try {
+        const data = await apiRequest(`/productos-menu/${id}/estado`, {
+            method: 'PUT',
+            body: JSON.stringify({ activo })
+        });
+        
+        if (data.success) {
+            showToast(`Producto ${activo ? 'activado' : 'desactivado'} exitosamente`, 'success');
+            await cargarMenu();
+            actualizarEstadisticas();
+        } else {
+            throw new Error(data.message);
+        }
+    } catch (error) {
+        console.error('Error al cambiar estado del producto:', error);
+        showToast('Error al cambiar estado del producto', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+// Eliminar producto del menú
+async function eliminarProductoMenu(id) {
+    if (!confirm('¿Está seguro de que desea eliminar este producto del menú? Esta acción no se puede deshacer.')) {
+        return;
+    }
+    
+    showLoading();
+    
+    try {
+        const data = await apiRequest(`/productos-menu/${id}`, {
+            method: 'DELETE'
+        });
+        
+        if (data.success) {
+            showToast('Producto del menú eliminado exitosamente', 'success');
+            await cargarMenu();
+            actualizarEstadisticas();
+        } else {
+            throw new Error(data.message);
+        }
+    } catch (error) {
+        console.error('Error al eliminar producto del menú:', error);
+        showToast('Error al eliminar producto del menú', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
 // Agregar ingrediente al formulario
-function agregarIngrediente() {
+function agregarIngrediente(productoId = null, cantidad = '') {
     const container = document.getElementById('ingredientesContainer');
     const item = document.createElement('div');
     item.className = 'ingrediente-item';
+    
+    // Debug: verificar productos disponibles
+    console.log('Productos disponibles para ingredientes:', productos);
+    
     item.innerHTML = `
         <select class="form-input ingrediente-select">
             <option value="">Seleccionar ingrediente...</option>
             ${productos.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('')}
         </select>
-        <input type="number" class="form-input ingrediente-cantidad" step="0.01" placeholder="Cantidad">
+        <input type="number" class="form-input ingrediente-cantidad" step="0.01" placeholder="Cantidad" value="${cantidad}">
         <button type="button" class="btn btn-danger btn-small" onclick="removerIngrediente(this)">
             <i class="fas fa-trash"></i>
         </button>
     `;
     container.appendChild(item);
+    
+    // Si se proporciona un productoId, seleccionarlo
+    if (productoId) {
+        const select = item.querySelector('.ingrediente-select');
+        select.value = productoId;
+        console.log('Seleccionado producto ID:', productoId, 'en select:', select.value);
+    }
 }
 
 // Remover ingrediente del formulario
@@ -417,11 +719,17 @@ async function crearPedido() {
     }
     
     const items = Object.entries(pedidoActual).map(([productoMenuId, cantidad]) => ({
-        productoMenuId: parseInt(productoMenuId),
+        productoId: parseInt(productoMenuId),
         cantidad: cantidad
     }));
     
     showLoading();
+    
+    // Guardar estado anterior del inventario para mostrar cambios
+    const productosAnteriores = [...productos];
+    
+    // Debug: mostrar qué se está enviando
+    console.log('Enviando pedido:', { cliente, items });
     
     try {
         const data = await apiRequest('/pedidos/menu', {
@@ -451,6 +759,13 @@ async function crearPedido() {
             ]);
             
             actualizarEstadisticas();
+            
+            // Mostrar cambios en el inventario
+            mostrarCambiosInventario(productosAnteriores, productos);
+            
+            // Mostrar mensaje de confirmación con detalles
+            const totalItems = items.reduce((sum, item) => sum + item.cantidad, 0);
+            showToast(`Pedido creado: ${totalItems} productos por $${data.total.toFixed(2)}`, 'success');
         } else {
             throw new Error(data.message);
         }
@@ -471,6 +786,10 @@ async function cargarHistorial() {
         
         if (data.success) {
             pedidos = data.data;
+            // Asegurar que productosMenu esté cargado antes de renderizar
+            if (productosMenu.length === 0) {
+                await cargarMenu();
+            }
             renderizarHistorial();
         } else {
             throw new Error(data.message);
@@ -486,10 +805,30 @@ function renderizarHistorial() {
     const tbody = document.getElementById('historialTable');
     tbody.innerHTML = '';
     
+    // Debug: mostrar información de los datos
+    console.log('Pedidos cargados:', pedidos);
+    console.log('Productos del menú disponibles:', productosMenu);
+    
     pedidos.forEach(pedido => {
         const row = document.createElement('tr');
         const fecha = new Date(pedido.fecha).toLocaleString('es-ES');
-        const items = pedido.items.map(item => `${item.nombre} (${item.cantidad})`).join(', ');
+        
+        // Mejorar la visualización de items
+        const items = pedido.items.map(item => {
+            console.log('Procesando item:', item); // Debug
+            
+            // Si el item tiene nombre, usarlo directamente
+            if (item.nombre) {
+                return `${item.nombre} (${item.cantidad})`;
+            }
+            // Si no tiene nombre, buscar en productosMenu por ID
+            const productoMenu = productosMenu.find(p => p.id === item.productoId);
+            if (productoMenu) {
+                return `${productoMenu.nombre} (${item.cantidad})`;
+            }
+            // Si no se encuentra, mostrar ID del producto
+            return `Producto ID: ${item.productoId} (${item.cantidad})`;
+        }).join(', ');
         
         row.innerHTML = `
             <td>${pedido.id}</td>
@@ -718,6 +1057,12 @@ function openModal(modalId) {
     
     // Cargar productos en select de ingredientes si es necesario
     if (modalId === 'agregarProductoMenu') {
+        // Solo restaurar botón si NO estamos en modo edición
+        const submitBtn = document.querySelector('#agregarProductoMenu .modal-footer .btn-primary');
+        if (submitBtn && submitBtn.textContent === 'Agregar al Menú') {
+            restaurarBotonAgregarMenu();
+        }
+        
         const selects = document.querySelectorAll('.ingrediente-select');
         selects.forEach(select => {
             if (select.options.length <= 1) {
@@ -735,6 +1080,22 @@ function openModal(modalId) {
 // Cerrar modal
 function closeModal(modalId) {
     document.getElementById(modalId).style.display = 'none';
+    
+    // Restaurar botón del modal de agregar producto al menú
+    if (modalId === 'agregarProductoMenu') {
+        restaurarBotonAgregarMenu();
+        console.log('Modal cerrado, botón restaurado a modo agregar');
+    }
+}
+
+// Restaurar botón de agregar al menú
+function restaurarBotonAgregarMenu() {
+    const submitBtn = document.querySelector('#agregarProductoMenu .modal-footer .btn-primary');
+    if (submitBtn) {
+        submitBtn.textContent = 'Agregar al Menú';
+        submitBtn.onclick = agregarProductoMenu;
+        console.log('Botón restaurado a modo agregar');
+    }
 }
 
 // Mostrar loading
@@ -776,7 +1137,14 @@ window.onclick = function(event) {
     const modals = document.querySelectorAll('.modal');
     modals.forEach(modal => {
         if (event.target === modal) {
+            const modalId = modal.id;
             modal.style.display = 'none';
+            
+            // Restaurar botón si es el modal de agregar producto al menú
+            if (modalId === 'agregarProductoMenu') {
+                restaurarBotonAgregarMenu();
+                console.log('Modal cerrado por clic fuera, botón restaurado');
+            }
         }
     });
 }
@@ -785,3 +1153,53 @@ window.onclick = function(event) {
 document.addEventListener('submit', function(e) {
     e.preventDefault();
 });
+
+// Función para mostrar cambios en el inventario
+function mostrarCambiosInventario(productosAnteriores, productosNuevos) {
+    const cambios = [];
+    
+    productosNuevos.forEach(productoNuevo => {
+        const productoAnterior = productosAnteriores.find(p => p.id === productoNuevo.id);
+        if (productoAnterior && productoAnterior.cantidad !== productoNuevo.cantidad) {
+            const diferencia = productoNuevo.cantidad - productoAnterior.cantidad;
+            cambios.push({
+                nombre: productoNuevo.nombre,
+                cantidadAnterior: formatearCantidad(productoAnterior.cantidad, productoAnterior.unidad),
+                cantidadNueva: formatearCantidad(productoNuevo.cantidad, productoNuevo.unidad),
+                diferencia: formatearCantidad(Math.abs(diferencia), productoNuevo.unidad),
+                unidad: productoNuevo.unidad,
+                tipo: diferencia < 0 ? 'reducción' : 'aumento'
+            });
+        }
+    });
+    
+    if (cambios.length > 0) {
+        console.log('Cambios en inventario:', cambios);
+        const mensaje = cambios.map(cambio => 
+            `${cambio.nombre}: ${cambio.cantidadAnterior} → ${cambio.cantidadNueva} ${cambio.unidad}`
+        ).join(', ');
+        showToast(`Inventario actualizado: ${mensaje}`, 'info');
+    }
+}
+
+// Función para formatear cantidades según la unidad
+function formatearCantidad(cantidad, unidad) {
+    // Para kilogramos, mostrar 2 decimales
+    if (unidad && unidad.toLowerCase().includes('kg')) {
+        return cantidad.toFixed(2);
+    }
+    // Para litros, mostrar 2 decimales
+    if (unidad && unidad.toLowerCase().includes('l')) {
+        return cantidad.toFixed(2);
+    }
+    // Para mililitros, mostrar 1 decimal
+    if (unidad && unidad.toLowerCase().includes('ml')) {
+        return cantidad.toFixed(1);
+    }
+    // Para piezas y otros, mostrar sin decimales
+    if (unidad && (unidad.toLowerCase().includes('pieza') || unidad.toLowerCase().includes('unidad'))) {
+        return Math.round(cantidad).toString();
+    }
+    // Para otros casos, mostrar 2 decimales
+    return cantidad.toFixed(2);
+}
