@@ -52,6 +52,9 @@ async function initializeApp() {
         mostrarEstadisticasPedidosPorDia();
         actualizarEstadisticasHistorial();
         
+        // Verificar pedidos pendientes al cargar
+        verificarPedidosPendientes();
+        
         showToast('Sistema cargado exitosamente', 'success');
     } catch (error) {
         console.error('Error al inicializar:', error);
@@ -771,14 +774,16 @@ async function crearPedido() {
             });
             actualizarResumenPedido();
             
-            // Recargar datos
+            // Recargar datos y actualizar estadísticas inmediatamente
             await Promise.all([
                 cargarInventario(),
                 cargarMenu(),
-                cargarHistorial()
+                cargarPedidosHoy() // Cargar pedidos de hoy específicamente
             ]);
             
-            actualizarEstadisticas();
+            // Actualizar estadísticas del historial
+            actualizarEstadisticasHistorial();
+            mostrarEstadisticasPedidosPorDia();
             
             // Mostrar cambios en el inventario
             mostrarCambiosInventario(productosAnteriores, productos);
@@ -874,9 +879,19 @@ function renderizarHistorial() {
                 </span>
             </td>
             <td>
-                <button class="btn btn-secondary btn-small" onclick="verPedido(${pedido.id})">
-                    <i class="fas fa-eye"></i>
-                </button>
+                <div class="btn-group">
+                    <button class="btn btn-secondary btn-small" onclick="verPedido(${pedido.id})" title="Ver detalles">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    ${pedido.estado === 'pendiente' ? `
+                        <button class="btn btn-success btn-small" onclick="marcarComoPagado(${pedido.id})" title="Marcar como pagado">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        <button class="btn btn-danger btn-small" onclick="cancelarPedido(${pedido.id})" title="Cancelar pedido">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    ` : ''}
+                </div>
             </td>
         `;
         tbody.appendChild(row);
@@ -1425,4 +1440,74 @@ function formatearCantidad(cantidad, unidad) {
     }
     // Para otros casos, mostrar 2 decimales
     return cantidad.toFixed(2);
-} 
+}
+
+// ==================== FUNCIONES DE ESTADO DE PEDIDOS ====================
+
+// Marcar pedido como pagado
+async function marcarComoPagado(pedidoId) {
+    try {
+        showLoading();
+        const response = await apiRequest(`/pedidos/${pedidoId}/pagar`, {
+            method: 'PATCH'
+        });
+        
+        if (response.success) {
+            showToast(`✅ Pedido #${pedidoId} marcado como pagado`, 'success');
+            // Recargar pedidos y actualizar estadísticas
+            await cargarPedidosHoy();
+            actualizarEstadisticasHistorial();
+            verificarPedidosPendientes();
+        } else {
+            showToast('Error al marcar pedido como pagado', 'error');
+        }
+    } catch (error) {
+        console.error('Error al marcar como pagado:', error);
+        showToast('Error al marcar pedido como pagado', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+// Cancelar pedido
+async function cancelarPedido(pedidoId) {
+    if (!confirm('¿Estás seguro de que quieres cancelar este pedido?')) {
+        return;
+    }
+    
+    try {
+        showLoading();
+        const response = await apiRequest(`/pedidos/${pedidoId}/cancelar`, {
+            method: 'PATCH'
+        });
+        
+        if (response.success) {
+            showToast(`❌ Pedido #${pedidoId} cancelado`, 'success');
+            // Recargar pedidos y actualizar estadísticas
+            await cargarPedidosHoy();
+            actualizarEstadisticasHistorial();
+            verificarPedidosPendientes();
+        } else {
+            showToast('Error al cancelar pedido', 'error');
+        }
+    } catch (error) {
+        console.error('Error al cancelar pedido:', error);
+        showToast('Error al cancelar pedido', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+// Verificar pedidos pendientes y mostrar notificación
+async function verificarPedidosPendientes() {
+    try {
+        const response = await apiRequest('/pedidos/pendientes');
+        
+        if (response.success && response.data.length > 0) {
+            const pedidosPendientes = response.data.length;
+            showToast(`⏳ Tienes ${pedidosPendientes} pedido${pedidosPendientes > 1 ? 's' : ''} pendiente${pedidosPendientes > 1 ? 's' : ''}`, 'warning');
+        }
+    } catch (error) {
+        console.error('Error al verificar pedidos pendientes:', error);
+    }
+}

@@ -1016,7 +1016,7 @@ body {
     color: #856404;
 }
 
-.status-badge.procesado {
+.status-badge.pagado {
     background: #d4edda;
     color: #155724;
 }
@@ -1024,4 +1024,43 @@ body {
 .status-badge.cancelado {
     background: #f8d7da;
     color: #721c24;
+}
+
+/* Botones de acciones */
+.btn-group {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+}
+
+.btn-group .btn {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-group .btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.btn-group .btn-success {
+    background: #28a745;
+    border-color: #28a745;
+}
+
+.btn-group .btn-success:hover {
+    background: #218838;
+    border-color: #1e7e34;
+}
+
+.btn-group .btn-danger {
+    background: #dc3545;
+    border-color: #dc3545;
+}
+
+.btn-group .btn-danger:hover {
+    background: #c82333;
+    border-color: #bd2130;
 }

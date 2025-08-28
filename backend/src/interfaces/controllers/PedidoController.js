@@ -374,6 +374,122 @@ class PedidoController {
             });
         }
     }
+
+    /**
+     * Cambiar estado de un pedido
+     * @param {Object} req - Request de Express
+     * @param {Object} res - Response de Express
+     */
+    async cambiarEstado(req, res) {
+        try {
+            const { id } = req.params;
+            const { estado } = req.body;
+            
+            const pedido = await this.pedidoRepository.obtenerPorId(parseInt(id));
+            
+            if (!pedido) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Pedido no encontrado'
+                });
+            }
+
+            // Validar estado
+            const estadosValidos = ['pendiente', 'pagado', 'cancelado'];
+            if (!estadosValidos.includes(estado)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Estado no válido. Estados permitidos: pendiente, pagado, cancelado'
+                });
+            }
+
+            // Actualizar estado
+            pedido.actualizarEstado(estado);
+            await this.pedidoRepository.actualizar(pedido);
+
+            res.json({
+                success: true,
+                data: pedido.toJSON(),
+                message: `Pedido #${pedido.id} marcado como ${estado}`
+            });
+        } catch (error) {
+            res.status(500).json({
+                success: false,
+                error: error.message,
+                message: 'Error al cambiar estado del pedido'
+            });
+        }
+    }
+
+    /**
+     * Marcar pedido como pagado
+     * @param {Object} req - Request de Express
+     * @param {Object} res - Response de Express
+     */
+    async marcarComoPagado(req, res) {
+        try {
+            const { id } = req.params;
+            
+            const pedido = await this.pedidoRepository.obtenerPorId(parseInt(id));
+            
+            if (!pedido) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Pedido no encontrado'
+                });
+            }
+
+            pedido.actualizarEstado('pagado');
+            await this.pedidoRepository.actualizar(pedido);
+
+            res.json({
+                success: true,
+                data: pedido.toJSON(),
+                message: `Pedido #${pedido.id} marcado como pagado`
+            });
+        } catch (error) {
+            res.status(500).json({
+                success: false,
+                error: error.message,
+                message: 'Error al marcar pedido como pagado'
+            });
+        }
+    }
+
+    /**
+     * Cancelar pedido
+     * @param {Object} req - Request de Express
+     * @param {Object} res - Response de Express
+     */
+    async cancelarPedido(req, res) {
+        try {
+            const { id } = req.params;
+            
+            const pedido = await this.pedidoRepository.obtenerPorId(parseInt(id));
+            
+            if (!pedido) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Pedido no encontrado'
+                });
+            }
+
+            pedido.actualizarEstado('cancelado');
+            await this.pedidoRepository.actualizar(pedido);
+
+            res.json({
+                success: true,
+                data: pedido.toJSON(),
+                message: `Pedido #${pedido.id} cancelado`
+            });
+        } catch (error) {
+            res.status(500).json({
+                success: false,
+                error: error.message,
+                message: 'Error al cancelar pedido'
+            });
+        }
+    }
 }
 
 module.exports = PedidoController;

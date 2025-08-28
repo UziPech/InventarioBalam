@@ -317,6 +317,90 @@ module.exports = (pedidoController) => {
 
     /**
      * @swagger
+     * /api/pedidos/{id}/estado:
+     *   patch:
+     *     summary: Cambiar estado de un pedido
+     *     tags: [Pedidos]
+     *     parameters:
+     *       - in: path
+     *         name: id
+     *         required: true
+     *         schema:
+     *           type: integer
+     *         description: ID del pedido
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         application/json:
+     *           schema:
+     *             type: object
+     *             required:
+     *               - estado
+     *             properties:
+     *               estado:
+     *                 type: string
+     *                 enum: [pendiente, pagado, cancelado]
+     *                 description: Nuevo estado del pedido
+     *     responses:
+     *       200:
+     *         description: Estado del pedido cambiado exitosamente
+     *       400:
+     *         description: Estado no válido
+     *       404:
+     *         description: Pedido no encontrado
+     *       500:
+     *         description: Error interno del servidor
+     */
+    router.patch('/:id/estado', pedidoController.cambiarEstado.bind(pedidoController));
+
+    /**
+     * @swagger
+     * /api/pedidos/{id}/pagar:
+     *   patch:
+     *     summary: Marcar pedido como pagado
+     *     tags: [Pedidos]
+     *     parameters:
+     *       - in: path
+     *         name: id
+     *         required: true
+     *         schema:
+     *           type: integer
+     *         description: ID del pedido
+     *     responses:
+     *       200:
+     *         description: Pedido marcado como pagado exitosamente
+     *       404:
+     *         description: Pedido no encontrado
+     *       500:
+     *         description: Error interno del servidor
+     */
+    router.patch('/:id/pagar', pedidoController.marcarComoPagado.bind(pedidoController));
+
+    /**
+     * @swagger
+     * /api/pedidos/{id}/cancelar:
+     *   patch:
+     *     summary: Cancelar pedido
+     *     tags: [Pedidos]
+     *     parameters:
+     *       - in: path
+     *         name: id
+     *         required: true
+     *         schema:
+     *           type: integer
+     *         description: ID del pedido
+     *     responses:
+     *       200:
+     *         description: Pedido cancelado exitosamente
+     *       404:
+     *         description: Pedido no encontrado
+     *       500:
+     *         description: Error interno del servidor
+     */
+    router.patch('/:id/cancelar', pedidoController.cancelarPedido.bind(pedidoController));
+
+    /**
+     * @swagger
      * /api/pedidos/{id}:
      *   put:
      *     summary: Actualizar un pedido existente
@@ -343,7 +427,7 @@ module.exports = (pedidoController) => {
      *                 type: number
      *               estado:
      *                 type: string
-     *                 enum: [pendiente, procesado, cancelado]
+     *                 enum: [pendiente, pagado, cancelado]
      *     responses:
      *       200:
      *         description: Pedido actualizado exitosamente

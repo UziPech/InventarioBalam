@@ -5,7 +5,7 @@ class Pedido {
         this.items = items || [];
         this.total = total || 0;
         this.fecha = new Date();
-        this.estado = 'pendiente'; // pendiente, procesado, cancelado
+        this.estado = 'pendiente'; // pendiente, pagado, cancelado
     }
 
     // Métodos de negocio
@@ -41,7 +41,7 @@ class Pedido {
     }
 
     actualizarEstado(nuevoEstado) {
-        const estadosValidos = ['pendiente', 'procesado', 'cancelado'];
+        const estadosValidos = ['pendiente', 'pagado', 'cancelado'];
         if (!estadosValidos.includes(nuevoEstado)) {
             throw new Error('Estado no válido');
         }
