@@ -91,7 +91,11 @@ class PedidoController {
      */
     async crearConMenu(req, res) {
         try {
+            console.log('📦 Datos recibidos en crearConMenu:', JSON.stringify(req.body, null, 2));
+            
             const resultado = await this.procesarPedidoMenuUseCase.ejecutar(req.body);
+            
+            console.log('📦 Resultado del procesamiento:', JSON.stringify(resultado, null, 2));
             
             if (resultado.success) {
                 res.status(201).json(resultado);
@@ -99,6 +103,7 @@ class PedidoController {
                 res.status(400).json(resultado);
             }
         } catch (error) {
+            console.error('❌ Error en crearConMenu:', error);
             res.status(500).json({
                 success: false,
                 error: error.message,
