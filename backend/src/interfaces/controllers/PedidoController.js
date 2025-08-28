@@ -405,7 +405,7 @@ class PedidoController {
 
             // Actualizar estado
             pedido.actualizarEstado(estado);
-            await this.pedidoRepository.actualizar(pedido);
+            await this.pedidoRepository.actualizar(parseInt(id), pedido);
 
             res.json({
                 success: true,
@@ -440,7 +440,7 @@ class PedidoController {
             }
 
             pedido.actualizarEstado('pagado');
-            await this.pedidoRepository.actualizar(pedido);
+            await this.pedidoRepository.actualizar(parseInt(id), pedido);
 
             res.json({
                 success: true,
@@ -475,7 +475,7 @@ class PedidoController {
             }
 
             pedido.actualizarEstado('cancelado');
-            await this.pedidoRepository.actualizar(pedido);
+            await this.pedidoRepository.actualizar(parseInt(id), pedido);
 
             res.json({
                 success: true,

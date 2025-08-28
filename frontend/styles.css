@@ -1064,3 +1064,69 @@ body {
     background: #c82333;
     border-color: #bd2130;
 }
+
+/* Estilos para el modal de detalles del pedido */
+.pedido-detalle {
+    padding: 1rem;
+}
+
+.pedido-detalle h3 {
+    color: #667eea;
+    margin-bottom: 1rem;
+    font-size: 1.3rem;
+}
+
+.detalle-info {
+    background: rgba(102, 126, 234, 0.05);
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.detalle-info p {
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.detalle-info p:last-child {
+    margin-bottom: 0;
+}
+
+.detalle-items {
+    background: rgba(255, 255, 255, 0.8);
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.detalle-items h4 {
+    color: #333;
+    margin-bottom: 0.75rem;
+    font-size: 1.1rem;
+}
+
+.detalle-items ul {
+    list-style: none;
+    padding: 0;
+}
+
+.detalle-items li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.detalle-items li:last-child {
+    border-bottom: none;
+}
+
+.detalle-items li:before {
+    content: "•";
+    color: #667eea;
+    font-weight: bold;
+    margin-right: 0.5rem;
+}

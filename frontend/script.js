@@ -1511,3 +1511,89 @@ async function verificarPedidosPendientes() {
         console.error('Error al verificar pedidos pendientes:', error);
     }
 }
+
+// Ver detalles de un pedido
+async function verPedido(pedidoId) {
+    try {
+        showLoading();
+        const response = await apiRequest(`/pedidos/${pedidoId}`);
+        
+        if (response.success) {
+            const pedido = response.data;
+            
+            // Crear contenido del modal
+            const itemsTexto = pedido.items.map(item => {
+                const nombre = item.nombre || `Producto ID: ${item.productoId}`;
+                return `${item.cantidad} x ${nombre} - $${item.precio.toFixed(2)}`;
+            }).join('\n');
+            
+            const fecha = new Date(pedido.fecha).toLocaleString('es-ES');
+            const numeroFormateado = pedido.numeroFormateado || `#${pedido.id}`;
+            
+            const contenido = `
+                <div class="pedido-detalle">
+                    <h3>Pedido ${numeroFormateado}</h3>
+                    <div class="detalle-info">
+                        <p><strong>Cliente:</strong> ${pedido.cliente}</p>
+                        <p><strong>Fecha:</strong> ${fecha}</p>
+                        <p><strong>Estado:</strong> 
+                            <span class="status-badge ${pedido.estado}">
+                                ${pedido.estado.charAt(0).toUpperCase() + pedido.estado.slice(1)}
+                            </span>
+                        </p>
+                        <p><strong>Total:</strong> $${pedido.total.toFixed(2)}</p>
+                    </div>
+                    <div class="detalle-items">
+                        <h4>Items del Pedido:</h4>
+                        <ul>
+                            ${pedido.items.map(item => {
+                                const nombre = item.nombre || `Producto ID: ${item.productoId}`;
+                                return `<li>${item.cantidad} x ${nombre} - $${item.precio.toFixed(2)}</li>`;
+                            }).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `;
+            
+            // Mostrar modal con los detalles
+            showModal('Detalles del Pedido', contenido);
+        } else {
+            showToast('Error al obtener detalles del pedido', 'error');
+        }
+    } catch (error) {
+        console.error('Error al ver pedido:', error);
+        showToast('Error al obtener detalles del pedido', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+// Función auxiliar para mostrar modal con contenido personalizado
+function showModal(titulo, contenido) {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'detallePedidoModal';
+    
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>${titulo}</h3>
+                <span class="close" onclick="closeDetalleModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                ${contenido}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    modal.style.display = 'block';
+}
+
+// Función para cerrar el modal de detalles
+function closeDetalleModal() {
+    const modal = document.getElementById('detallePedidoModal');
+    if (modal) {
+        modal.remove();
+    }
+}

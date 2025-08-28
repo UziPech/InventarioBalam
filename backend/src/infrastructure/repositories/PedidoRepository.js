@@ -17,12 +17,22 @@ class PedidoRepository extends IPedidoRepository {
     async obtenerTodos() {
         try {
             const pedidosData = await this.database.getPedidos();
-            return pedidosData.map(data => new Pedido(
-                data.id,
-                data.cliente,
-                data.items,
-                data.total
-            ));
+            return pedidosData.map(data => {
+                const pedido = new Pedido(
+                    data.id,
+                    data.cliente,
+                    data.items,
+                    data.total
+                );
+                
+                // Preservar información adicional
+                if (data.fecha) pedido.fecha = new Date(data.fecha);
+                if (data.estado) pedido.estado = data.estado;
+                if (data.numeroDia) pedido.numeroDia = data.numeroDia;
+                if (data.fechaCreacion) pedido.fechaCreacion = data.fechaCreacion;
+                
+                return pedido;
+            });
         } catch (error) {
             throw new Error(`Error al obtener pedidos: ${error.message}`);
         }
@@ -125,12 +135,20 @@ class PedidoRepository extends IPedidoRepository {
 
             await this.database.savePedidos(pedidosData);
             
-            return new Pedido(
+            const pedidoActualizado = new Pedido(
                 pedidosData[index].id,
                 pedidosData[index].cliente,
                 pedidosData[index].items,
                 pedidosData[index].total
             );
+            
+            // Preservar información adicional
+            if (pedidosData[index].fecha) pedidoActualizado.fecha = new Date(pedidosData[index].fecha);
+            if (pedidosData[index].estado) pedidoActualizado.estado = pedidosData[index].estado;
+            if (pedidosData[index].numeroDia) pedidoActualizado.numeroDia = pedidosData[index].numeroDia;
+            if (pedidosData[index].fechaCreacion) pedidoActualizado.fechaCreacion = pedidosData[index].fechaCreacion;
+            
+            return pedidoActualizado;
         } catch (error) {
             throw new Error(`Error al actualizar pedido: ${error.message}`);
         }
@@ -171,12 +189,22 @@ class PedidoRepository extends IPedidoRepository {
                 p.cliente.toLowerCase().includes(cliente.toLowerCase())
             );
 
-            return pedidosFiltrados.map(data => new Pedido(
-                data.id,
-                data.cliente,
-                data.items,
-                data.total
-            ));
+            return pedidosFiltrados.map(data => {
+                const pedido = new Pedido(
+                    data.id,
+                    data.cliente,
+                    data.items,
+                    data.total
+                );
+                
+                // Preservar información adicional
+                if (data.fecha) pedido.fecha = new Date(data.fecha);
+                if (data.estado) pedido.estado = data.estado;
+                if (data.numeroDia) pedido.numeroDia = data.numeroDia;
+                if (data.fechaCreacion) pedido.fechaCreacion = data.fechaCreacion;
+                
+                return pedido;
+            });
         } catch (error) {
             throw new Error(`Error al obtener pedidos por cliente: ${error.message}`);
         }
@@ -196,12 +224,22 @@ class PedidoRepository extends IPedidoRepository {
                 return fechaPedido >= fechaInicio && fechaPedido <= fechaFin;
             });
 
-            return pedidosFiltrados.map(data => new Pedido(
-                data.id,
-                data.cliente,
-                data.items,
-                data.total
-            ));
+            return pedidosFiltrados.map(data => {
+                const pedido = new Pedido(
+                    data.id,
+                    data.cliente,
+                    data.items,
+                    data.total
+                );
+                
+                // Preservar información adicional
+                if (data.fecha) pedido.fecha = new Date(data.fecha);
+                if (data.estado) pedido.estado = data.estado;
+                if (data.numeroDia) pedido.numeroDia = data.numeroDia;
+                if (data.fechaCreacion) pedido.fechaCreacion = data.fechaCreacion;
+                
+                return pedido;
+            });
         } catch (error) {
             throw new Error(`Error al obtener pedidos por fecha: ${error.message}`);
         }
@@ -217,12 +255,22 @@ class PedidoRepository extends IPedidoRepository {
             const pedidosData = await this.database.getPedidos();
             const pedidosFiltrados = pedidosData.filter(p => p.estado === estado);
 
-            return pedidosFiltrados.map(data => new Pedido(
-                data.id,
-                data.cliente,
-                data.items,
-                data.total
-            ));
+            return pedidosFiltrados.map(data => {
+                const pedido = new Pedido(
+                    data.id,
+                    data.cliente,
+                    data.items,
+                    data.total
+                );
+                
+                // Preservar información adicional
+                if (data.fecha) pedido.fecha = new Date(data.fecha);
+                if (data.estado) pedido.estado = data.estado;
+                if (data.numeroDia) pedido.numeroDia = data.numeroDia;
+                if (data.fechaCreacion) pedido.fechaCreacion = data.fechaCreacion;
+                
+                return pedido;
+            });
         } catch (error) {
             throw new Error(`Error al obtener pedidos por estado: ${error.message}`);
         }
