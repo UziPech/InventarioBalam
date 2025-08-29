@@ -85,15 +85,9 @@ class PedidoRepository extends IPedidoRepository {
             const nowUtc = new Date();
             const { startUtc, endUtc, localStart } = rangoDiaOperacion(nowUtc, TZ, START_HOUR);
             
-            // Obtener pedidos del día de operación actual
-            const pedidosDiaOperacion = pedidosData.filter(p => {
-                const fechaPedido = new Date(p.fecha);
-                return fechaPedido >= startUtc && fechaPedido < endUtc;
-            });
-            
-            // Generar ID único para evitar conflictos multi-dispositivo
-            const maxId = pedidosDiaOperacion.length > 0 
-                ? Math.max(...pedidosDiaOperacion.map(p => p.id))
+            // Generar ID único global (no solo del día) para evitar conflictos multi-dispositivo
+            const maxId = pedidosData.length > 0 
+                ? Math.max(...pedidosData.map(p => p.id))
                 : 0;
             const nuevoId = maxId + 1;
             pedido.id = nuevoId;
@@ -101,19 +95,28 @@ class PedidoRepository extends IPedidoRepository {
             // Agregar fecha actual (UTC)
             pedido.fecha = nowUtc;
             
+            // Obtener pedidos del día de operación actual para numeración del día
+            const pedidosDiaOperacion = pedidosData.filter(p => {
+                const fechaPedido = new Date(p.fecha);
+                return fechaPedido >= startUtc && fechaPedido < endUtc;
+            });
+            
+            // Numeración del día (1, 2, 3, etc. para el día actual)
+            const numeroDia = pedidosDiaOperacion.length + 1;
+            
             // Agregar información adicional para tracking
-            pedido.numeroDia = nuevoId;
+            pedido.numeroDia = numeroDia;
             pedido.fechaCreacion = localStart.toISOString().split('T')[0];
             
             // Debug: mostrar información del horario de operación
             console.log(`📅 Horario de Operación - Zona: ${TZ}`);
             console.log(`🕐 Rango: ${fmtLocal(startUtc)} - ${fmtLocal(endUtc)}`);
-            console.log(`📦 Pedido #${nuevoId} creado para el día de operación: ${fmtLocal(localStart, TZ, { dateStyle: 'full' })}`);
+            console.log(`📦 Pedido #${nuevoId} (Día #${numeroDia}) creado para el día de operación: ${fmtLocal(localStart, TZ, { dateStyle: 'full' })}`);
             
             pedidosData.push(pedido.toJSON());
             await this.database.savePedidos(pedidosData);
             
-            console.log(`📦 Pedido #${nuevoId} creado para el día de operación: ${fmtLocal(localStart, TZ, { dateStyle: 'full' })}`);
+            console.log(`✅ Pedido #${nuevoId} (Día #${numeroDia}) guardado exitosamente`);
             
             return pedido;
         } catch (error) {

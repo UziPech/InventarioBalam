@@ -9,6 +9,16 @@ let pedidoActual = {};
 // Usar la nueva utilidad de tiempo global
 const timeUtils = window.TimeUtils;
 
+// Variables globales para controlar notificaciones
+let ultimoConteoPendientes = 0;
+let notificacionInicialMostrada = false;
+let ultimaNotificacionPendientes = 0;
+
+// Variables para controlar el estado de carga
+let cargandoDatos = false;
+let ultimaCargaCompleta = null;
+let filtroActual = 'todos'; // 'todos', 'hoy', 'semana', 'mes', 'pendientes'
+
 // Inicialización
 document.addEventListener('DOMContentLoaded', function() {
     initializeApp();
@@ -57,8 +67,8 @@ async function initializeApp() {
         actualizarEstadisticasHistorial();
         mostrarEstadisticasPedidosPorDia();
         
-        // Verificar pedidos pendientes
-        verificarPedidosPendientes();
+        // Verificar pedidos pendientes al inicio (con notificación)
+        verificarPedidosPendientes(true);
         
         // Mostrar información del horario de operación
         await mostrarInfoHorarioOperacion();
@@ -825,18 +835,25 @@ async function crearPedido() {
 
 // ==================== HISTORIAL ====================
 
-// Cargar historial
+// Cargar historial completo (función principal)
 async function cargarHistorial() {
     try {
         const data = await apiRequest('/pedidos');
         
         if (data.success) {
-            pedidos = data.data;
+            console.log(`📋 Cargando historial completo: ${data.data.length} pedidos`);
+            pedidos = data.data; // Actualizar la variable global con TODOS los pedidos
+            
             // Asegurar que productosMenu esté cargado antes de renderizar
             if (productosMenu.length === 0) {
                 await cargarMenu();
             }
+            
             renderizarHistorial();
+            actualizarEstadisticasHistorial();
+            ultimaCargaCompleta = new Date();
+            
+            console.log('✅ Historial completo cargado correctamente');
         } else {
             throw new Error(data.message);
         }
@@ -882,12 +899,12 @@ function renderizarHistorial() {
             return `Producto ID: ${item.productoId} (${item.cantidad})`;
         }).join(', ');
         
-        // Formatear número de pedido
-        const numeroPedido = pedido.numeroFormateado || `#${pedido.id}`;
+        // Formatear número de pedido - usar numeroDia si está disponible, sino el ID
+        const numeroPedido = pedido.numeroDia ? `#${pedido.numeroDia}` : `#${pedido.id}`;
         
         // Verificar estado del pedido
         const estado = pedido.estado || 'pendiente';
-        console.log(`Pedido #${pedido.id} - Estado: ${estado} - Fecha: ${fecha}`);
+        console.log(`Pedido #${pedido.id} (Día #${pedido.numeroDia || pedido.id}) - Estado: ${estado} - Fecha: ${fecha}`);
         
         row.innerHTML = `
             <td><span class="pedido-numero">${numeroPedido}</span></td>
@@ -1256,91 +1273,106 @@ function mostrarCambiosInventario(productosAnteriores, productosNuevos) {
     }
 }
 
-// Cargar pedidos de hoy
+// Cargar pedidos de hoy (sin sobrescribir la variable global)
 async function cargarPedidosHoy() {
     try {
         const data = await apiRequest('/pedidos/hoy');
         
         if (data.success) {
             console.log(`📅 Pedidos de hoy: ${data.total} pedidos`);
-            pedidos = data.data; // Actualizar la variable global
-            renderizarHistorial();
-            actualizarEstadisticasHistorial();
-            mostrarEstadisticasPedidosPorDia();
-            showToast(`Cargados ${data.total} pedidos de hoy`, 'success');
+            
+            // Solo mostrar notificación si es la primera carga
+            if (!ultimaCargaCompleta) {
+                showToast(`Cargados ${data.total} pedidos de hoy`, 'success');
+            }
+            
             return data.data;
         } else {
             throw new Error(data.message);
         }
     } catch (error) {
         console.error('Error al cargar pedidos de hoy:', error);
-        showToast('Error al cargar pedidos de hoy', 'error');
+        if (!ultimaCargaCompleta) {
+            showToast('Error al cargar pedidos de hoy', 'error');
+        }
         return [];
     }
 }
 
-// Cargar pedidos de esta semana
+// Cargar pedidos de esta semana (sin sobrescribir la variable global)
 async function cargarPedidosEstaSemana() {
     try {
         const data = await apiRequest('/pedidos/semana');
         
         if (data.success) {
             console.log(`📅 Pedidos de esta semana: ${data.total} pedidos`);
-            pedidos = data.data; // Actualizar la variable global
-            renderizarHistorial();
-            actualizarEstadisticasHistorial();
-            showToast(`Cargados ${data.total} pedidos de esta semana`, 'success');
+            
+            // Solo mostrar notificación si es la primera carga
+            if (!ultimaCargaCompleta) {
+                showToast(`Cargados ${data.total} pedidos de esta semana`, 'success');
+            }
+            
             return data.data;
         } else {
             throw new Error(data.message);
         }
     } catch (error) {
         console.error('Error al cargar pedidos de esta semana:', error);
-        showToast('Error al cargar pedidos de esta semana', 'error');
+        if (!ultimaCargaCompleta) {
+            showToast('Error al cargar pedidos de esta semana', 'error');
+        }
         return [];
     }
 }
 
-// Cargar pedidos de este mes
+// Cargar pedidos de este mes (sin sobrescribir la variable global)
 async function cargarPedidosEsteMes() {
     try {
         const data = await apiRequest('/pedidos/mes');
         
         if (data.success) {
             console.log(`📅 Pedidos de este mes: ${data.total} pedidos`);
-            pedidos = data.data; // Actualizar la variable global
-            renderizarHistorial();
-            actualizarEstadisticasHistorial();
-            showToast(`Cargados ${data.total} pedidos de este mes`, 'success');
+            
+            // Solo mostrar notificación si es la primera carga
+            if (!ultimaCargaCompleta) {
+                showToast(`Cargados ${data.total} pedidos de este mes`, 'success');
+            }
+            
             return data.data;
         } else {
             throw new Error(data.message);
         }
     } catch (error) {
         console.error('Error al cargar pedidos de este mes:', error);
-        showToast('Error al cargar pedidos de este mes', 'error');
+        if (!ultimaCargaCompleta) {
+            showToast('Error al cargar pedidos de este mes', 'error');
+        }
         return [];
     }
 }
 
-// Cargar pedidos pendientes
-async function cargarPedidosPendientes() {
+// Cargar pedidos pendientes (optimizado)
+async function cargarPedidosPendientes(mostrarNotificacion = false) {
     try {
         const data = await apiRequest('/pedidos/pendientes');
         
         if (data.success) {
             console.log(`⏳ Pedidos pendientes: ${data.total} pedidos`);
-            pedidos = data.data; // Actualizar la variable global
-            renderizarHistorial();
-            actualizarEstadisticasHistorial();
-            showToast(`Cargados ${data.total} pedidos pendientes`, 'success');
+            
+            // Solo mostrar notificación si se solicita explícitamente
+            if (mostrarNotificacion) {
+                showToast(`Cargados ${data.total} pedidos pendientes`, 'success');
+            }
+            
             return data.data;
         } else {
             throw new Error(data.message);
         }
     } catch (error) {
         console.error('Error al cargar pedidos pendientes:', error);
-        showToast('Error al cargar pedidos pendientes', 'error');
+        if (mostrarNotificacion) {
+            showToast('Error al cargar pedidos pendientes', 'error');
+        }
         return [];
     }
 }
@@ -1582,14 +1614,25 @@ async function cancelarPedido(pedidoId) {
     }
 }
 
-// Verificar pedidos pendientes y mostrar notificación
-async function verificarPedidosPendientes() {
+// Verificar pedidos pendientes y mostrar notificación (optimizado)
+async function verificarPedidosPendientes(mostrarNotificacion = false) {
     try {
         const response = await apiRequest('/pedidos/pendientes');
         
-        if (response.success && response.data.length > 0) {
+        if (response.success) {
             const pedidosPendientes = response.data.length;
-            showToast(`⏳ Tienes ${pedidosPendientes} pedido${pedidosPendientes > 1 ? 's' : ''} pendiente${pedidosPendientes > 1 ? 's' : ''}`, 'warning');
+            
+            // Solo mostrar notificación si:
+            // 1. Es la primera vez que se carga (inicio del sistema)
+            // 2. Se solicita explícitamente mostrar notificación
+            // 3. El conteo cambió desde la última verificación
+            if (mostrarNotificacion || !notificacionInicialMostrada || pedidosPendientes !== ultimoConteoPendientes) {
+                if (pedidosPendientes > 0) {
+                    showToast(`⏳ Tienes ${pedidosPendientes} pedido${pedidosPendientes > 1 ? 's' : ''} pendiente${pedidosPendientes > 1 ? 's' : ''}`, 'warning');
+                }
+                notificacionInicialMostrada = true;
+                ultimoConteoPendientes = pedidosPendientes;
+            }
         }
     } catch (error) {
         console.error('Error al verificar pedidos pendientes:', error);
@@ -1747,11 +1790,11 @@ async function forzarSincronizacion() {
             cargarPedidosPendientes()
         ]);
         
-        // Actualizar todas las estadísticas
+        // Actualizar todas las estadísticas (sin notificaciones)
         actualizarEstadisticas();
         actualizarEstadisticasHistorial();
         mostrarEstadisticasPedidosPorDia();
-        verificarPedidosPendientes();
+        verificarPedidosPendientes(false);
         
         console.log('✅ Sincronización completa finalizada');
         showToast('Datos sincronizados correctamente', 'success');
@@ -1831,10 +1874,10 @@ async function limpiarTodosLosPedidos() {
                 cargarHistorial()
             ]);
             
-            // Actualizar UI
+            // Actualizar UI (sin notificaciones)
             actualizarEstadisticas();
             actualizarEstadisticasHistorial();
-            verificarPedidosPendientes();
+            verificarPedidosPendientes(false);
             
                     console.log('✅ Base de datos limpiada completamente');
     } else {
@@ -1868,10 +1911,10 @@ function configurarAutoRefresh() {
                 cargarHistorial()
             ]);
             
-            // Actualizar estadísticas
+            // Actualizar estadísticas (sin notificaciones)
             actualizarEstadisticas();
             actualizarEstadisticasHistorial();
-            verificarPedidosPendientes();
+            verificarPedidosPendientes(false);
             
             console.log('✅ Auto-refresh completado');
         } catch (error) {
@@ -1879,11 +1922,11 @@ function configurarAutoRefresh() {
         }
     }, 30000); // 30 segundos
     
-    // Auto-refresh cada 5 segundos para pedidos pendientes
+    // Auto-refresh cada 5 segundos para pedidos pendientes (sin notificaciones)
     setInterval(async () => {
         try {
-            await cargarPedidosPendientes();
-            verificarPedidosPendientes();
+            await cargarPedidosPendientes(false);
+            verificarPedidosPendientes(false);
         } catch (error) {
             console.error('❌ Error en refresh de pedidos pendientes:', error);
         }
