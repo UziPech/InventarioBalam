@@ -305,6 +305,51 @@ class PedidoRepository extends IPedidoRepository {
             throw new Error(`Error al obtener estadísticas: ${error.message}`);
         }
     }
+
+    /**
+     * Eliminar un pedido específico
+     * @param {number} id - ID del pedido a eliminar
+     * @returns {Promise<boolean>} True si se eliminó correctamente
+     */
+    async eliminar(id) {
+        try {
+            const pedidosData = await this.database.getPedidos();
+            const pedidoIndex = pedidosData.findIndex(p => p.id === id);
+            
+            if (pedidoIndex === -1) {
+                throw new Error(`Pedido con ID ${id} no encontrado`);
+            }
+
+            // Eliminar el pedido del array
+            pedidosData.splice(pedidoIndex, 1);
+            
+            // Guardar los cambios en la base de datos
+            await this.database.savePedidos(pedidosData);
+            
+            console.log(`✅ Pedido #${id} eliminado exitosamente`);
+            return true;
+        } catch (error) {
+            throw new Error(`Error al eliminar pedido: ${error.message}`);
+        }
+    }
+
+    /**
+     * Eliminar todos los pedidos (limpiar base de datos)
+     * @returns {Promise<boolean>} True si se eliminaron todos correctamente
+     */
+    async eliminarTodos() {
+        try {
+            console.log('🧹 Iniciando eliminación de todos los pedidos...');
+            
+            // Guardar un array vacío para limpiar todos los pedidos
+            await this.database.savePedidos([]);
+            
+            console.log('✅ Todos los pedidos eliminados exitosamente');
+            return true;
+        } catch (error) {
+            throw new Error(`Error al eliminar todos los pedidos: ${error.message}`);
+        }
+    }
 }
 
 module.exports = PedidoRepository;

@@ -464,8 +464,8 @@ class PedidoController {
 
     /**
      * Cancelar pedido
-     * @param {Object} req - Request de Express
-     * @param {Object} res - Response de Express
+     * @param {Object} req - Request of Express
+     * @param {Object} res - Response of Express
      */
     async cancelarPedido(req, res) {
         try {
@@ -493,6 +493,74 @@ class PedidoController {
                 success: false,
                 error: error.message,
                 message: 'Error al cancelar pedido'
+            });
+        }
+    }
+
+    /**
+     * Eliminar todos los pedidos (limpiar base de datos)
+     * @param {Object} req - Request of Express
+     * @param {Object} res - Response of Express
+     */
+    async eliminarTodosLosPedidos(req, res) {
+        try {
+            console.log('🧹 Iniciando limpieza completa de la base de datos...');
+            
+            // Obtener todos los pedidos antes de eliminarlos
+            const pedidosExistentes = await this.pedidoRepository.obtenerTodos();
+            console.log(`📊 Pedidos encontrados para eliminar: ${pedidosExistentes.length}`);
+            
+            // Eliminar todos los pedidos
+            await this.pedidoRepository.eliminarTodos();
+            
+            console.log('✅ Todos los pedidos eliminados exitosamente');
+            
+            res.json({
+                success: true,
+                message: `Se eliminaron ${pedidosExistentes.length} pedidos de la base de datos`,
+                pedidosEliminados: pedidosExistentes.length,
+                timestamp: new Date().toISOString()
+            });
+        } catch (error) {
+            console.error('❌ Error al eliminar todos los pedidos:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message,
+                message: 'Error al eliminar todos los pedidos'
+            });
+        }
+    }
+
+    /**
+     * Eliminar un pedido específico
+     * @param {Object} req - Request of Express
+     * @param {Object} res - Response of Express
+     */
+    async eliminarPedido(req, res) {
+        try {
+            const { id } = req.params;
+            
+            const pedido = await this.pedidoRepository.obtenerPorId(parseInt(id));
+            
+            if (!pedido) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Pedido no encontrado'
+                });
+            }
+
+            await this.pedidoRepository.eliminar(parseInt(id));
+
+            res.json({
+                success: true,
+                message: `Pedido #${pedido.id} eliminado exitosamente`,
+                pedidoEliminado: pedido.toJSON()
+            });
+        } catch (error) {
+            res.status(500).json({
+                success: false,
+                error: error.message,
+                message: 'Error al eliminar pedido'
             });
         }
     }

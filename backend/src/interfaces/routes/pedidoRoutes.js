@@ -459,7 +459,35 @@ module.exports = (pedidoController) => {
      *       500:
      *         description: Error interno del servidor
      */
-    router.delete('/:id', pedidoController.eliminar.bind(pedidoController));
+    router.delete('/:id', pedidoController.eliminarPedido.bind(pedidoController));
+
+    /**
+     * @swagger
+     * /api/pedidos/limpiar/todos:
+     *   delete:
+     *     summary: Eliminar todos los pedidos (limpiar base de datos)
+     *     tags: [Pedidos]
+     *     responses:
+     *       200:
+     *         description: Todos los pedidos eliminados exitosamente
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *               properties:
+     *                 success:
+     *                   type: boolean
+     *                 message:
+     *                   type: string
+     *                 pedidosEliminados:
+     *                   type: integer
+     *                 timestamp:
+     *                   type: string
+     *                   format: date-time
+     *       500:
+     *         description: Error interno del servidor
+     */
+    router.delete('/limpiar/todos', pedidoController.eliminarTodosLosPedidos.bind(pedidoController));
 
     return router;
 };

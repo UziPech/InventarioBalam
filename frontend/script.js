@@ -905,6 +905,9 @@ function renderizarHistorial() {
                             <i class="fas fa-times"></i>
                         </button>
                     ` : ''}
+                    <button class="btn btn-warning btn-small" onclick="eliminarPedido(${pedido.id})" title="Eliminar pedido">
+                        <i class="fas fa-trash"></i>
+                    </button>
                 </div>
             </td>
         `;
@@ -1822,6 +1825,91 @@ async function forzarSincronizacion() {
     } catch (error) {
         console.error('❌ Error en sincronización:', error);
         showToast('Error al sincronizar datos: ' + error.message, 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+// Función para eliminar un pedido específico
+async function eliminarPedido(pedidoId) {
+    if (!confirm(`¿Estás seguro de que quieres eliminar el pedido #${pedidoId}? Esta acción no se puede deshacer.`)) {
+        return;
+    }
+    
+    try {
+        console.log(`🗑️ Eliminando pedido #${pedidoId}...`);
+        showLoading();
+        
+        const response = await apiRequest(`/pedidos/${pedidoId}`, {
+            method: 'DELETE'
+        });
+        
+        console.log('Respuesta del servidor:', response);
+        
+        if (response.success) {
+            showToast(`🗑️ Pedido #${pedidoId} eliminado exitosamente`, 'success');
+            
+            // Forzar recarga completa de datos
+            console.log('🔄 Recargando todos los datos...');
+            await forzarSincronizacion();
+            
+            console.log('✅ Datos recargados completamente');
+        } else {
+            throw new Error(response.message || 'Error desconocido');
+        }
+    } catch (error) {
+        console.error('Error al eliminar pedido:', error);
+        showToast(`Error al eliminar pedido: ${error.message}`, 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+// Función para limpiar todos los pedidos (vaciar base de datos)
+async function limpiarTodosLosPedidos() {
+    if (!confirm('⚠️ ¿Estás SEGURO de que quieres eliminar TODOS los pedidos?\n\nEsta acción:\n• Eliminará TODOS los pedidos de la base de datos\n• No se puede deshacer\n• Limpiará completamente el historial\n\n¿Continuar?')) {
+        return;
+    }
+    
+    try {
+        console.log('🧹 Iniciando limpieza completa de todos los pedidos...');
+        showLoading();
+        
+        const response = await apiRequest('/pedidos/limpiar/todos', {
+            method: 'DELETE'
+        });
+        
+        console.log('Respuesta del servidor:', response);
+        
+        if (response.success) {
+            showToast(`🧹 Se eliminaron ${response.pedidosEliminados} pedidos de la base de datos`, 'success');
+            
+            // Limpiar variables locales
+            productos = [];
+            productosMenu = [];
+            pedidos = [];
+            pedidoActual = {};
+            
+            // Recargar datos desde cero
+            console.log('🔄 Recargando datos limpios...');
+            await Promise.all([
+                cargarInventario(),
+                cargarMenu(),
+                cargarHistorial()
+            ]);
+            
+            // Actualizar UI
+            actualizarEstadisticas();
+            actualizarEstadisticasHistorial();
+            verificarPedidosPendientes();
+            
+            console.log('✅ Base de datos limpiada completamente');
+        } else {
+            throw new Error(response.message || 'Error desconocido');
+        }
+    } catch (error) {
+        console.error('Error al limpiar todos los pedidos:', error);
+        showToast(`Error al limpiar pedidos: ${error.message}`, 'error');
     } finally {
         hideLoading();
     }
