@@ -1473,21 +1473,28 @@ async function marcarComoPagado(pedidoId) {
         if (response.success) {
             showToast(`✅ Pedido #${pedidoId} marcado como pagado`, 'success');
             
-            // Actualizar el pedido en la lista local
-            const pedidoIndex = pedidos.findIndex(p => p.id === pedidoId);
-            if (pedidoIndex !== -1) {
-                pedidos[pedidoIndex].estado = 'pagado';
-                console.log('Pedido actualizado en lista local:', pedidos[pedidoIndex]);
-            }
+            // Forzar recarga completa de datos para evitar inconsistencias
+            console.log('🔄 Recargando todos los datos...');
             
-            // Recargar datos
+            // Limpiar cache local
+            pedidos = [];
+            
+            // Recargar todos los datos en paralelo
             await Promise.all([
+                cargarInventario(),
+                cargarMenu(),
+                cargarHistorial(),
                 cargarPedidosHoy(),
-                cargarHistorial()
+                cargarPedidosEstaSemana(),
+                cargarPedidosEsteMes(),
+                cargarPedidosPendientes()
             ]);
             
+            // Actualizar UI
             actualizarEstadisticasHistorial();
             verificarPedidosPendientes();
+            
+            console.log('✅ Datos recargados completamente');
         } else {
             throw new Error(response.message || 'Error desconocido');
         }
@@ -1518,21 +1525,28 @@ async function cancelarPedido(pedidoId) {
         if (response.success) {
             showToast(`❌ Pedido #${pedidoId} cancelado`, 'success');
             
-            // Actualizar el pedido en la lista local
-            const pedidoIndex = pedidos.findIndex(p => p.id === pedidoId);
-            if (pedidoIndex !== -1) {
-                pedidos[pedidoIndex].estado = 'cancelado';
-                console.log('Pedido actualizado en lista local:', pedidos[pedidoIndex]);
-            }
+            // Forzar recarga completa de datos para evitar inconsistencias
+            console.log('🔄 Recargando todos los datos...');
             
-            // Recargar datos
+            // Limpiar cache local
+            pedidos = [];
+            
+            // Recargar todos los datos en paralelo
             await Promise.all([
+                cargarInventario(),
+                cargarMenu(),
+                cargarHistorial(),
                 cargarPedidosHoy(),
-                cargarHistorial()
+                cargarPedidosEstaSemana(),
+                cargarPedidosEsteMes(),
+                cargarPedidosPendientes()
             ]);
             
+            // Actualizar UI
             actualizarEstadisticasHistorial();
             verificarPedidosPendientes();
+            
+            console.log('✅ Datos recargados completamente');
         } else {
             throw new Error(response.message || 'Error desconocido');
         }
@@ -1562,18 +1576,30 @@ async function verificarPedidosPendientes() {
 async function verPedido(pedidoId) {
     try {
         showLoading();
+        console.log(`🔍 Obteniendo detalles del pedido #${pedidoId}...`);
+        
         const response = await apiRequest(`/pedidos/${pedidoId}`);
         
         if (response.success) {
             const pedido = response.data;
+            console.log('📋 Datos del pedido recibidos:', pedido);
             
-            // Crear contenido del modal
-            const itemsTexto = pedido.items.map(item => {
-                const nombre = item.nombre || `Producto ID: ${item.productoId}`;
-                return `${item.cantidad} x ${nombre} - $${item.precio.toFixed(2)}`;
-            }).join('\n');
+            // Corregir el formato de fecha usando la misma zona horaria
+            const fechaPedido = new Date(pedido.fecha);
+            const offset = -6 * 60; // UTC-6 en minutos
+            const fechaLocal = new Date(fechaPedido.getTime() + (offset * 60 * 1000));
+            const fechaFormateada = fechaLocal.toLocaleString('es-ES', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
             
-            const fecha = new Date(pedido.fecha).toLocaleString('es-ES');
+            console.log(`📅 Fecha original: ${pedido.fecha}`);
+            console.log(`📅 Fecha corregida: ${fechaFormateada}`);
+            
             const numeroFormateado = pedido.numeroFormateado || `#${pedido.id}`;
             
             const contenido = `
@@ -1581,7 +1607,7 @@ async function verPedido(pedidoId) {
                     <h3>Pedido ${numeroFormateado}</h3>
                     <div class="detalle-info">
                         <p><strong>Cliente:</strong> ${pedido.cliente}</p>
-                        <p><strong>Fecha:</strong> ${fecha}</p>
+                        <p><strong>Fecha:</strong> ${fechaFormateada}</p>
                         <p><strong>Estado:</strong> 
                             <span class="status-badge ${pedido.estado}">
                                 ${pedido.estado.charAt(0).toUpperCase() + pedido.estado.slice(1)}
@@ -1641,5 +1667,45 @@ function closeDetalleModal() {
     const modal = document.getElementById('detallePedidoModal');
     if (modal) {
         modal.remove();
+    }
+}
+
+// Función para forzar sincronización completa de datos
+async function forzarSincronizacion() {
+    console.log('🔄 Forzando sincronización completa de datos...');
+    showLoading();
+    
+    try {
+        // Limpiar todas las variables globales
+        productos = [];
+        productosMenu = [];
+        pedidos = [];
+        pedidoActual = {};
+        
+        // Recargar todos los datos desde cero
+        await Promise.all([
+            cargarInventario(),
+            cargarMenu(),
+            cargarHistorial(),
+            cargarPedidosHoy(),
+            cargarPedidosEstaSemana(),
+            cargarPedidosEsteMes(),
+            cargarPedidosPendientes()
+        ]);
+        
+        // Actualizar todas las estadísticas
+        actualizarEstadisticas();
+        actualizarEstadisticasHistorial();
+        mostrarEstadisticasPedidos();
+        mostrarEstadisticasPedidosPorDia();
+        verificarPedidosPendientes();
+        
+        console.log('✅ Sincronización completa finalizada');
+        showToast('Datos sincronizados correctamente', 'success');
+    } catch (error) {
+        console.error('Error en sincronización:', error);
+        showToast('Error al sincronizar datos', 'error');
+    } finally {
+        hideLoading();
     }
 }
