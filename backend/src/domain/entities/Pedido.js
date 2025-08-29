@@ -4,14 +4,22 @@ class Pedido {
         this.cliente = cliente;
         this.items = items || [];
         this.total = total || 0;
-        // Usar fecha actual real, no futura
-        this.fecha = new Date();
-        // Verificar que la fecha no sea futura
+        
+        // Usar fecha actual real con zona horaria local
         const ahora = new Date();
-        if (this.fecha > ahora) {
-            this.fecha = ahora;
+        this.fecha = new Date(ahora.getTime() - (ahora.getTimezoneOffset() * 60000));
+        
+        // Asegurar que la fecha no sea futura
+        const fechaActual = new Date();
+        if (this.fecha > fechaActual) {
+            this.fecha = fechaActual;
         }
+        
         this.estado = 'pendiente'; // pendiente, pagado, cancelado
+        
+        // Debug: mostrar información de la fecha
+        console.log(`📅 Pedido #${id} - Fecha creada: ${this.fecha.toISOString()}`);
+        console.log(`📅 Pedido #${id} - Fecha local: ${this.fecha.toLocaleString('es-ES')}`);
     }
 
     // Métodos de negocio

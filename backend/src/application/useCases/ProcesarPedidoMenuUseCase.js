@@ -53,13 +53,19 @@ class ProcesarPedidoMenuUseCase {
                 };
             }
 
-            // Crear la entidad Pedido
+            // Crear la entidad Pedido con ID único
+            const pedidoId = Date.now();
             const pedido = new Pedido(
-                Date.now(),
+                pedidoId,
                 datosPedido.cliente || 'Cliente General',
                 [], // Los items se agregarán después
                 0   // El total se calculará después
             );
+
+            // Debug: mostrar información del pedido
+            console.log(`📦 Creando pedido #${pedidoId}`);
+            console.log(`👤 Cliente: ${pedido.cliente}`);
+            console.log(`📋 Items a procesar:`, datosPedido.items);
 
             // Agregar items al pedido y calcular total
             let totalPedido = 0;
@@ -67,6 +73,9 @@ class ProcesarPedidoMenuUseCase {
                 const productoMenu = productosMenu.find(p => p.id === item.productoId);
                 if (productoMenu) {
                     const subtotal = productoMenu.precio * item.cantidad;
+                    
+                    console.log(`🍔 Agregando item: ${productoMenu.nombre} x${item.cantidad} = $${subtotal}`);
+                    
                     pedido.agregarItem(
                         item.productoId,
                         productoMenu.nombre,
@@ -74,10 +83,13 @@ class ProcesarPedidoMenuUseCase {
                         productoMenu.precio
                     );
                     totalPedido += subtotal;
+                } else {
+                    console.log(`❌ Producto del menú no encontrado: ID ${item.productoId}`);
                 }
             }
 
             pedido.total = totalPedido;
+            console.log(`💰 Total del pedido: $${totalPedido}`);
 
             // Validar que la entidad sea válida
             if (!pedido.esValido()) {

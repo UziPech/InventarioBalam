@@ -852,7 +852,12 @@ function renderizarHistorial() {
         console.log('Procesando pedido:', pedido);
         
         const row = document.createElement('tr');
-        const fecha = new Date(pedido.fecha).toLocaleString('es-ES');
+        
+        // Corregir fecha con zona horaria local
+        const fechaPedido = new Date(pedido.fecha);
+        const offset = -6 * 60; // UTC-6 en minutos
+        const fechaLocal = new Date(fechaPedido.getTime() + (offset * 60 * 1000));
+        const fecha = fechaLocal.toLocaleString('es-ES');
         
         // Mejorar la visualización de items
         const items = pedido.items.map(item => {
@@ -874,7 +879,7 @@ function renderizarHistorial() {
         
         // Verificar estado del pedido
         const estado = pedido.estado || 'pendiente';
-        console.log(`Pedido #${pedido.id} - Estado: ${estado}`);
+        console.log(`Pedido #${pedido.id} - Estado: ${estado} - Fecha: ${fecha}`);
         
         row.innerHTML = `
             <td><span class="pedido-numero">${numeroPedido}</span></td>
@@ -1600,18 +1605,22 @@ async function verPedido(pedidoId) {
             const pedido = response.data;
             console.log('📋 Datos del pedido recibidos:', pedido);
             
-            // Usar fecha local real y verificar que no sea futura
+            // Usar fecha local real y corregir zona horaria
             const fechaPedido = new Date(pedido.fecha);
             const ahora = new Date();
             
+            // Corregir zona horaria (UTC-6 para México)
+            const offset = -6 * 60; // UTC-6 en minutos
+            const fechaLocal = new Date(fechaPedido.getTime() + (offset * 60 * 1000));
+            
             // Si la fecha es futura, usar la fecha actual
-            if (fechaPedido > ahora) {
+            if (fechaLocal > ahora) {
                 console.log(`⚠️ Pedido #${pedidoId} tiene fecha futura, usando fecha actual`);
-                fechaPedido.setTime(ahora.getTime());
+                fechaLocal.setTime(ahora.getTime());
             }
             
             // Formatear fecha con información detallada
-            const fechaFormateada = fechaPedido.toLocaleString('es-ES', {
+            const fechaFormateada = fechaLocal.toLocaleString('es-ES', {
                 year: 'numeric',
                 month: '2-digit',
                 day: '2-digit',
@@ -1621,15 +1630,16 @@ async function verPedido(pedidoId) {
             });
             
             // Información adicional para debugging
-            const fechaDia = fechaPedido.toISOString().split('T')[0];
+            const fechaDia = fechaLocal.toISOString().split('T')[0];
             const fechaActual = ahora.toISOString().split('T')[0];
             const esMismoDia = fechaDia === fechaActual;
             
-            console.log(`📅 Fecha original: ${pedido.fecha}`);
-            console.log(`📅 Fecha corregida: ${fechaFormateada}`);
+            console.log(`📅 Fecha original del servidor: ${pedido.fecha}`);
+            console.log(`📅 Fecha corregida local: ${fechaFormateada}`);
             console.log(`📅 Día del pedido: ${fechaDia}`);
             console.log(`📅 Día actual: ${fechaActual}`);
             console.log(`📅 ¿Es el mismo día?: ${esMismoDia ? 'Sí' : 'No'}`);
+            console.log(`📅 Items del pedido:`, pedido.items);
             
             const numeroFormateado = pedido.numeroFormateado || `#${pedido.id}`;
             
@@ -1651,7 +1661,8 @@ async function verPedido(pedidoId) {
                         <ul>
                             ${pedido.items.map(item => {
                                 const nombre = item.nombre || `Producto ID: ${item.productoId}`;
-                                return `<li>${item.cantidad} x ${nombre} - $${item.precio.toFixed(2)}</li>`;
+                                const subtotal = (item.cantidad * item.precio).toFixed(2);
+                                return `<li>${item.cantidad} x ${nombre} - $${item.precio.toFixed(2)} c/u = $${subtotal}</li>`;
                             }).join('')}
                         </ul>
                     </div>
