@@ -878,11 +878,17 @@ function renderizarHistorial() {
         
         const row = document.createElement('tr');
         
-        // Corregir fecha con zona horaria local
+        // Formatear fecha correctamente usando zona horaria local
         const fechaPedido = new Date(pedido.fecha);
-        const offset = -6 * 60; // UTC-6 en minutos
-        const fechaLocal = new Date(fechaPedido.getTime() + (offset * 60 * 1000));
-        const fecha = fechaLocal.toLocaleString('es-ES');
+        const fecha = fechaPedido.toLocaleString('es-ES', { 
+            timeZone: 'America/Merida',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
         
         // Mejorar la visualización de items
         const items = pedido.items.map(item => {

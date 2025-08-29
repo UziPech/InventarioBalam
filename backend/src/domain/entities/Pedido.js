@@ -5,9 +5,8 @@ class Pedido {
         this.items = items || [];
         this.total = total || 0;
         
-        // Usar fecha actual real con zona horaria local
-        const ahora = new Date();
-        this.fecha = new Date(ahora.getTime() - (ahora.getTimezoneOffset() * 60000));
+        // Usar fecha actual en UTC (sin ajustes de zona horaria)
+        this.fecha = new Date();
         
         // Asegurar que la fecha no sea futura
         const fechaActual = new Date();
@@ -18,8 +17,8 @@ class Pedido {
         this.estado = 'pendiente'; // pendiente, pagado, cancelado
         
         // Debug: mostrar información de la fecha
-        console.log(`📅 Pedido #${id} - Fecha creada: ${this.fecha.toISOString()}`);
-        console.log(`📅 Pedido #${id} - Fecha local: ${this.fecha.toLocaleString('es-ES')}`);
+        console.log(`📅 Pedido #${id} - Fecha creada (UTC): ${this.fecha.toISOString()}`);
+        console.log(`📅 Pedido #${id} - Fecha local: ${this.fecha.toLocaleString('es-ES', { timeZone: 'America/Merida' })}`);
     }
 
     // Métodos de negocio

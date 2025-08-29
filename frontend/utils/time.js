@@ -66,12 +66,27 @@ function proximoReinicio(nowUtc = new Date(), tz = TZ, startHour = START_HOUR) {
  * @returns {string} Fecha formateada
  */
 function fmtLocal(dateUtc, tz = TZ, opts = {}) {
-  return new Intl.DateTimeFormat('es-MX', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-    timeZone: tz,
-    ...opts
-  }).format(dateUtc);
+  try {
+    // Si se especifican opciones personalizadas, usarlas
+    if (opts && Object.keys(opts).length > 0) {
+      return new Intl.DateTimeFormat('es-MX', {
+        timeZone: tz,
+        ...opts
+      }).format(dateUtc);
+    }
+
+    // Formato por defecto
+    return new Intl.DateTimeFormat('es-MX', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+      timeZone: tz
+    }).format(dateUtc);
+  } catch (error) {
+    // Fallback simple si hay error con las opciones
+    return new Intl.DateTimeFormat('es-MX', {
+      timeZone: tz
+    }).format(dateUtc);
+  }
 }
 
 /**
