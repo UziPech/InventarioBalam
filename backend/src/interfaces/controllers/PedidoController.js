@@ -355,7 +355,7 @@ class PedidoController {
             res.json({
                 success: true,
                 data: pedidos.map(p => p.toJSON()),
-                message: `Pedidos del mes de operación (${fmtLocal(fechaOperacion, TZ, { month: 'long', year: 'numeric' })})`,
+                message: `Pedidos del mes de operación (${fmtLocal(fechaOperacion, TZ, { dateStyle: 'full' })})`,
                 total: pedidos.length,
                 fechaInicio: rangoMes.inicio.toISOString().split('T')[0],
                 fechaFin: rangoMes.fin.toISOString().split('T')[0],
