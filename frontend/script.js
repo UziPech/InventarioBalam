@@ -1715,74 +1715,7 @@ function closeDetalleModal() {
     }
 }
 
-// Función para limpiar cache y recargar completamente
-function limpiarCacheYRecargar() {
-    console.log('🧹 Limpiando cache y recargando...');
-    
-    // Limpiar localStorage si existe
-    try {
-        localStorage.clear();
-        sessionStorage.clear();
-        console.log('✅ Cache del navegador limpiado');
-    } catch (error) {
-        console.log('⚠️ No se pudo limpiar cache del navegador:', error);
-    }
-    
-    // Limpiar variables globales
-    productos = [];
-    productosMenu = [];
-    pedidos = [];
-    pedidoActual = {};
-    
-    // Mostrar mensaje de limpieza
-    showToast('🧹 Cache limpiado, recargando aplicación...', 'info');
-    
-    // Recargar la página después de un breve delay
-    setTimeout(() => {
-        window.location.reload(true);
-    }, 1000);
-}
 
-// Función para resetear completamente la aplicación
-async function resetearAplicacion() {
-    console.log('🔄 Reseteando aplicación completamente...');
-    showLoading();
-    
-    try {
-        // Limpiar todas las variables
-        productos = [];
-        productosMenu = [];
-        pedidos = [];
-        pedidoActual = {};
-        
-        // Limpiar cache del navegador
-        try {
-            localStorage.clear();
-            sessionStorage.clear();
-        } catch (error) {
-            console.log('⚠️ Error limpiando cache:', error);
-        }
-        
-        // Recargar datos desde cero
-        await Promise.all([
-            cargarInventario(),
-            cargarMenu(),
-            cargarHistorial()
-        ]);
-        
-        // Actualizar UI
-        actualizarEstadisticas();
-        actualizarEstadisticasHistorial();
-        verificarPedidosPendientes();
-        
-        showToast('✅ Aplicación reseteada correctamente', 'success');
-    } catch (error) {
-        console.error('❌ Error reseteando aplicación:', error);
-        showToast('Error reseteando aplicación: ' + error.message, 'error');
-    } finally {
-        hideLoading();
-    }
-}
 
 // Función para forzar sincronización completa de datos
 async function forzarSincronizacion() {
