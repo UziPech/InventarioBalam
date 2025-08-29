@@ -1,5 +1,6 @@
 const IPedidoRepository = require('../../domain/repositories/IPedidoRepository');
 const Pedido = require('../../domain/entities/Pedido');
+const OperacionHorario = require('../../utils/OperacionHorario');
 
 /**
  * Implementación del repositorio de pedidos usando JSON
@@ -8,6 +9,7 @@ class PedidoRepository extends IPedidoRepository {
     constructor(database) {
         super();
         this.database = database;
+        this.operacionHorario = new OperacionHorario();
     }
 
     /**
@@ -80,31 +82,37 @@ class PedidoRepository extends IPedidoRepository {
         try {
             const pedidosData = await this.database.getPedidos();
             
-            // Generar ID por día (reiniciar cada día)
-            const hoy = new Date();
-            const fechaHoy = hoy.toISOString().split('T')[0]; // YYYY-MM-DD
+            // Usar el sistema de horario de operación personalizado
+            const fechaOperacion = this.operacionHorario.obtenerFechaOperacionActual();
+            const rangoOperacion = this.operacionHorario.obtenerRangoDiaOperacion(fechaOperacion);
             
-            // Obtener pedidos de hoy
-            const pedidosHoy = pedidosData.filter(p => {
-                const fechaPedido = new Date(p.fecha).toISOString().split('T')[0];
-                return fechaPedido === fechaHoy;
+            // Obtener pedidos del día de operación actual
+            const pedidosDiaOperacion = pedidosData.filter(p => {
+                const fechaPedido = new Date(p.fecha);
+                return fechaPedido >= rangoOperacion.inicio && fechaPedido <= rangoOperacion.fin;
             });
             
-            // Generar nuevo ID para hoy
-            const nuevoId = pedidosHoy.length + 1;
+            // Generar nuevo ID para el día de operación actual
+            const nuevoId = pedidosDiaOperacion.length + 1;
             pedido.id = nuevoId;
             
-            // Agregar fecha
+            // Agregar fecha actual
             pedido.fecha = new Date();
             
             // Agregar información adicional para tracking
             pedido.numeroDia = nuevoId;
-            pedido.fechaCreacion = fechaHoy;
+            pedido.fechaCreacion = fechaOperacion.toISOString().split('T')[0];
+            
+            // Debug: mostrar información del horario de operación
+            const infoDebug = this.operacionHorario.obtenerInfoDebug();
+            console.log(`📅 Horario de Operación - ${infoDebug.fechaOperacion}`);
+            console.log(`🕐 Rango: ${infoDebug.inicioOperacion} - ${infoDebug.finOperacion}`);
+            console.log(`📦 Pedido #${nuevoId} creado para el día de operación: ${fechaOperacion.toLocaleDateString('es-ES')}`);
             
             pedidosData.push(pedido.toJSON());
             await this.database.savePedidos(pedidosData);
             
-            console.log(`📦 Pedido #${nuevoId} creado para ${fechaHoy}`);
+            console.log(`📦 Pedido #${nuevoId} creado para el día de operación: ${fechaOperacion.toLocaleDateString('es-ES')}`);
             
             return pedido;
         } catch (error) {

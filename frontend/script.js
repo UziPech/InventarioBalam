@@ -6,6 +6,7 @@ let productos = [];
 let productosMenu = [];
 let pedidos = [];
 let pedidoActual = {};
+let operacionHorario = new OperacionHorario();
 
 // Inicialización
 document.addEventListener('DOMContentLoaded', function() {
@@ -57,6 +58,9 @@ async function initializeApp() {
         
         // Verificar pedidos pendientes
         verificarPedidosPendientes();
+        
+        // Mostrar información del horario de operación
+        await mostrarInfoHorarioOperacion();
         
         console.log('✅ Aplicación inicializada correctamente');
         showToast('Sistema cargado exitosamente', 'success');
@@ -1337,106 +1341,98 @@ async function cargarPedidosPendientes() {
     }
 }
 
-// Función para actualizar estadísticas del historial
-function actualizarEstadisticasHistorial() {
-    // Usar fecha local real
-    const hoy = new Date();
-    const fechaHoy = hoy.toISOString().split('T')[0];
-    
-    console.log(`📅 Calculando estadísticas para: ${fechaHoy}`);
-    console.log(`📅 Fecha actual del navegador: ${hoy.toLocaleDateString('es-ES')}`);
-    console.log(`📅 Hora actual: ${hoy.toLocaleTimeString('es-ES')}`);
-    
-    // Contar pedidos de hoy (considerando el día completo)
-    const pedidosHoy = pedidos.filter(p => {
-        const fechaPedido = new Date(p.fecha);
+    // Función para actualizar estadísticas del historial usando horario de operación
+    function actualizarEstadisticasHistorial() {
+        // Usar el sistema de horario de operación personalizado
+        const estadisticas = operacionHorario.obtenerEstadisticasDiaOperacion(pedidos);
+        const infoDebug = operacionHorario.obtenerInfoDebug();
         
-        // Verificar que la fecha del pedido no sea futura
-        if (fechaPedido > hoy) {
-            console.log(`⚠️ Pedido #${p.id} tiene fecha futura: ${fechaPedido.toLocaleString('es-ES')}`);
-            return false;
+        console.log(`📅 Horario de Operación - ${infoDebug.fechaOperacion}`);
+        console.log(`🕐 Rango: ${infoDebug.inicioOperacion} - ${infoDebug.finOperacion}`);
+        console.log(`📊 Estadísticas del día de operación: ${estadisticas.totalPedidos} pedidos, $${estadisticas.ventas.toFixed(2)} ventas, ${estadisticas.pendientes} pendientes`);
+        
+        // Actualizar elementos en la interfaz
+        const pedidosHoyElement = document.getElementById('pedidosHoyCount');
+        const ventasHoyElement = document.getElementById('ventasHoyTotal');
+        const pedidosPendientesElement = document.getElementById('pedidosPendientesCount');
+        
+        if (pedidosHoyElement) {
+            pedidosHoyElement.textContent = estadisticas.totalPedidos;
         }
         
-        // Comparar solo la fecha (sin hora) para considerar el día completo
-        const fechaPedidoStr = fechaPedido.toISOString().split('T')[0];
-        const coincide = fechaPedidoStr === fechaHoy;
+        if (ventasHoyElement) {
+            ventasHoyElement.textContent = '$' + estadisticas.ventas.toFixed(2);
+        }
         
-        // Log detallado para debugging
-        console.log(`Pedido #${p.id}: ${fechaPedidoStr} ${coincide ? '✓' : '✗'} (hoy: ${fechaHoy}) - Hora: ${fechaPedido.toLocaleTimeString('es-ES')}`);
+        if (pedidosPendientesElement) {
+            pedidosPendientesElement.textContent = estadisticas.pendientes;
+        }
         
-        return coincide;
-    });
-    
-    // Contar pedidos pendientes
-    const pedidosPendientes = pedidos.filter(p => p.estado === 'pendiente');
-    
-    // Calcular ventas de hoy
-    const ventasHoy = pedidosHoy.reduce((sum, p) => sum + p.total, 0);
-    
-    // Actualizar elementos en la interfaz
-    const pedidosHoyElement = document.getElementById('pedidosHoyCount');
-    const ventasHoyElement = document.getElementById('ventasHoyTotal');
-    const pedidosPendientesElement = document.getElementById('pedidosPendientesCount');
-    
-    if (pedidosHoyElement) {
-        pedidosHoyElement.textContent = pedidosHoy.length;
+        // Mostrar información del horario de operación en consola
+        console.log(`🎯 Sistema de Horario de Operación:`);
+        console.log(`   📅 Fecha de operación: ${infoDebug.fechaOperacion}`);
+        console.log(`   🕐 Hora actual: ${infoDebug.horaActual}`);
+        console.log(`   ⏰ Rango de operación: ${infoDebug.inicioOperacion} - ${infoDebug.finOperacion}`);
+        console.log(`   ✅ ¿Es día de operación actual?: ${infoDebug.esDiaOperacionActual ? 'Sí' : 'No'}`);
     }
-    
-    if (ventasHoyElement) {
-        ventasHoyElement.textContent = '$' + ventasHoy.toFixed(2);
-    }
-    
-    if (pedidosPendientesElement) {
-        pedidosPendientesElement.textContent = pedidosPendientes.length;
-    }
-    
-    console.log(`📊 Estadísticas actualizadas - Hoy: ${pedidosHoy.length} pedidos, $${ventasHoy.toFixed(2)} ventas, ${pedidosPendientes.length} pendientes`);
-}
 
-// Función para mostrar estadísticas de pedidos por día
-function mostrarEstadisticasPedidosPorDia() {
-    const hoy = new Date();
-    const fechaHoy = hoy.toLocaleDateString('es-ES', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
-    
-    // Contar pedidos de hoy
-    const pedidosHoy = pedidos.filter(p => {
-        const fechaPedido = new Date(p.fecha).toISOString().split('T')[0];
-        const fechaActual = hoy.toISOString().split('T')[0];
-        return fechaPedido === fechaActual;
-    });
-    
-    // Mostrar información en consola
-    console.log(`📊 Estadísticas de pedidos - ${fechaHoy}`);
-    console.log(`📦 Pedidos de hoy: ${pedidosHoy.length}`);
-    
-    if (pedidosHoy.length > 0) {
-        console.log('📋 Lista de pedidos de hoy:');
-        pedidosHoy.forEach(pedido => {
-            const hora = new Date(pedido.fecha).toLocaleTimeString('es-ES', {
-                hour: '2-digit',
-                minute: '2-digit'
+    // Función para mostrar estadísticas de pedidos por día usando horario de operación
+    function mostrarEstadisticasPedidosPorDia() {
+        const estadisticas = operacionHorario.obtenerEstadisticasDiaOperacion(pedidos);
+        const infoDebug = operacionHorario.obtenerInfoDebug();
+        
+        // Mostrar información en consola
+        console.log(`📊 Estadísticas del día de operación - ${infoDebug.fechaOperacion}`);
+        console.log(`📦 Pedidos del día de operación: ${estadisticas.totalPedidos}`);
+        console.log(`💰 Ventas del día de operación: $${estadisticas.ventas.toFixed(2)}`);
+        console.log(`⏳ Pedidos pendientes: ${estadisticas.pendientes}`);
+        
+        if (estadisticas.totalPedidos > 0) {
+            console.log('📋 Lista de pedidos del día de operación:');
+            const pedidosDiaOperacion = operacionHorario.filtrarPedidosDiaOperacion(pedidos);
+            pedidosDiaOperacion.forEach(pedido => {
+                const hora = new Date(pedido.fecha).toLocaleTimeString('es-ES', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                console.log(`   🍔 Pedido #${pedido.id} - ${pedido.cliente} - $${pedido.total.toFixed(2)} - ${hora} - ${pedido.estado}`);
             });
-            console.log(`   🍔 Pedido #${pedido.id} - ${pedido.cliente} - $${pedido.total.toFixed(2)} - ${hora}`);
-        });
+        }
+        
+        // Actualizar información en el dashboard si existe
+        const pedidosHoyElement = document.getElementById('pedidosHoy');
+        if (pedidosHoyElement) {
+            pedidosHoyElement.textContent = estadisticas.totalPedidos;
+        }
+        
+        const ventasHoyElement = document.getElementById('ventasHoy');
+        if (ventasHoyElement) {
+            ventasHoyElement.textContent = '$' + estadisticas.ventas.toFixed(2);
+        }
     }
-    
-    // Actualizar información en el dashboard si existe
-    const pedidosHoyElement = document.getElementById('pedidosHoy');
-    if (pedidosHoyElement) {
-        pedidosHoyElement.textContent = pedidosHoy.length;
+
+    // Función para mostrar información del horario de operación
+    async function mostrarInfoHorarioOperacion() {
+        try {
+            const response = await apiRequest('/pedidos/horario-operacion');
+            
+            if (response.success) {
+                const data = response.data;
+                console.log('🎯 Información del Horario de Operación:');
+                console.log(`   📅 Horario: ${data.horarioOperacion.descripcion}`);
+                console.log(`   🕐 Hora actual: ${data.fechaActual.hora}`);
+                console.log(`   📆 Fecha de operación: ${data.fechaActual.fechaOperacion}`);
+                console.log(`   ⏰ Rango de operación: ${data.rangoOperacion.inicioFormateado} - ${data.rangoOperacion.finFormateado}`);
+                console.log(`   🔄 Próximo reinicio: ${data.estado.proximoReinicio.fechaFormateada}`);
+                console.log(`   ⏱️ Tiempo restante: ${data.estado.proximoReinicio.tiempoRestante.horas}h ${data.estado.proximoReinicio.tiempoRestante.minutos}m`);
+                
+                // Mostrar toast con información
+                showToast(`🕐 Horario de Operación: ${data.horarioOperacion.descripcion} | Próximo reinicio: ${data.estado.proximoReinicio.tiempoRestante.horas}h ${data.estado.proximoReinicio.tiempoRestante.minutos}m`, 'info');
+            }
+        } catch (error) {
+            console.error('Error al obtener información del horario de operación:', error);
+        }
     }
-    
-    const totalVentasHoy = pedidosHoy.reduce((sum, p) => sum + p.total, 0);
-    const ventasHoyElement = document.getElementById('ventasHoy');
-    if (ventasHoyElement) {
-        ventasHoyElement.textContent = '$' + totalVentasHoy.toFixed(2);
-    }
-}
 
 // Función para mostrar estadísticas de pedidos
 function mostrarEstadisticasPedidos() {

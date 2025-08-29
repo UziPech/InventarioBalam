@@ -1,3 +1,5 @@
+const OperacionHorario = require('../../utils/OperacionHorario');
+
 /**
  * Controlador para manejar las operaciones de pedidos
  */
@@ -6,6 +8,7 @@ class PedidoController {
         this.pedidoRepository = pedidoRepository;
         this.procesarPedidoUseCase = procesarPedidoUseCase;
         this.procesarPedidoMenuUseCase = procesarPedidoMenuUseCase;
+        this.operacionHorario = new OperacionHorario();
     }
 
     /**
@@ -264,30 +267,35 @@ class PedidoController {
      */
     async obtenerPedidosHoy(req, res) {
         try {
-            // Usar zona horaria local de México (UTC-6)
-            const hoy = new Date();
-            const offset = -6 * 60; // UTC-6 en minutos
-            const fechaLocal = new Date(hoy.getTime() + (offset * 60 * 1000));
+            // Usar el sistema de horario de operación personalizado
+            const fechaOperacion = this.operacionHorario.obtenerFechaOperacionActual();
+            const rangoOperacion = this.operacionHorario.obtenerRangoDiaOperacion(fechaOperacion);
             
-            const inicioDia = new Date(fechaLocal.getFullYear(), fechaLocal.getMonth(), fechaLocal.getDate());
-            const finDia = new Date(fechaLocal.getFullYear(), fechaLocal.getMonth(), fechaLocal.getDate(), 23, 59, 59, 999);
+            console.log(`🔍 Buscando pedidos del día de operación: ${fechaOperacion.toLocaleDateString('es-ES')}`);
+            console.log(`🕐 Rango de operación: ${rangoOperacion.inicio.toLocaleString('es-ES')} - ${rangoOperacion.fin.toLocaleString('es-ES')}`);
             
-            console.log(`🔍 Buscando pedidos de hoy: ${inicioDia.toISOString()} a ${finDia.toISOString()}`);
+            const pedidos = await this.pedidoRepository.obtenerPorFecha(rangoOperacion.inicio, rangoOperacion.fin);
             
-            const pedidos = await this.pedidoRepository.obtenerPorFecha(inicioDia, finDia);
+            // Información de debug del horario de operación
+            const infoDebug = this.operacionHorario.obtenerInfoDebug();
             
             res.json({
                 success: true,
                 data: pedidos.map(p => p.toJSON()),
-                message: `Pedidos de hoy (${fechaLocal.toLocaleDateString('es-ES')})`,
+                message: `Pedidos del día de operación (${fechaOperacion.toLocaleDateString('es-ES')})`,
                 total: pedidos.length,
-                fecha: fechaLocal.toISOString().split('T')[0]
+                fecha: fechaOperacion.toISOString().split('T')[0],
+                infoHorario: {
+                    fechaOperacion: infoDebug.fechaOperacion,
+                    horaActual: infoDebug.horaActual,
+                    rangoOperacion: `${infoDebug.inicioOperacion} - ${infoDebug.finOperacion}`
+                }
             });
         } catch (error) {
             res.status(500).json({
                 success: false,
                 error: error.message,
-                message: 'Error al obtener pedidos de hoy'
+                message: 'Error al obtener pedidos del día de operación'
             });
         }
     }
@@ -299,30 +307,31 @@ class PedidoController {
      */
     async obtenerPedidosEstaSemana(req, res) {
         try {
-            const hoy = new Date();
-            const inicioSemana = new Date(hoy);
-            inicioSemana.setDate(hoy.getDate() - hoy.getDay()); // Domingo
-            inicioSemana.setHours(0, 0, 0, 0);
+            // Usar el sistema de horario de operación personalizado
+            const rangoSemana = this.operacionHorario.obtenerRangoSemanaOperacion();
             
-            const finSemana = new Date(inicioSemana);
-            finSemana.setDate(inicioSemana.getDate() + 6); // Sábado
-            finSemana.setHours(23, 59, 59, 999);
+            console.log(`🔍 Buscando pedidos de la semana de operación`);
+            console.log(`🕐 Rango: ${rangoSemana.inicio.toLocaleString('es-ES')} - ${rangoSemana.fin.toLocaleString('es-ES')}`);
             
-            const pedidos = await this.pedidoRepository.obtenerPorFecha(inicioSemana, finSemana);
+            const pedidos = await this.pedidoRepository.obtenerPorFecha(rangoSemana.inicio, rangoSemana.fin);
             
             res.json({
                 success: true,
                 data: pedidos.map(p => p.toJSON()),
-                message: 'Pedidos de esta semana',
+                message: 'Pedidos de la semana de operación',
                 total: pedidos.length,
-                fechaInicio: inicioSemana.toISOString().split('T')[0],
-                fechaFin: finSemana.toISOString().split('T')[0]
+                fechaInicio: rangoSemana.inicio.toISOString().split('T')[0],
+                fechaFin: rangoSemana.fin.toISOString().split('T')[0],
+                infoHorario: {
+                    inicioSemana: rangoSemana.inicio.toLocaleString('es-ES'),
+                    finSemana: rangoSemana.fin.toLocaleString('es-ES')
+                }
             });
         } catch (error) {
             res.status(500).json({
                 success: false,
                 error: error.message,
-                message: 'Error al obtener pedidos de esta semana'
+                message: 'Error al obtener pedidos de la semana de operación'
             });
         }
     }
@@ -334,25 +343,32 @@ class PedidoController {
      */
     async obtenerPedidosEsteMes(req, res) {
         try {
-            const hoy = new Date();
-            const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-            const finMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0, 23, 59, 59, 999);
+            // Usar el sistema de horario de operación personalizado
+            const rangoMes = this.operacionHorario.obtenerRangoMesOperacion();
+            const fechaOperacion = this.operacionHorario.obtenerFechaOperacionActual();
             
-            const pedidos = await this.pedidoRepository.obtenerPorFecha(inicioMes, finMes);
+            console.log(`🔍 Buscando pedidos del mes de operación`);
+            console.log(`🕐 Rango: ${rangoMes.inicio.toLocaleString('es-ES')} - ${rangoMes.fin.toLocaleString('es-ES')}`);
+            
+            const pedidos = await this.pedidoRepository.obtenerPorFecha(rangoMes.inicio, rangoMes.fin);
             
             res.json({
                 success: true,
                 data: pedidos.map(p => p.toJSON()),
-                message: `Pedidos de ${hoy.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}`,
+                message: `Pedidos del mes de operación (${fechaOperacion.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })})`,
                 total: pedidos.length,
-                fechaInicio: inicioMes.toISOString().split('T')[0],
-                fechaFin: finMes.toISOString().split('T')[0]
+                fechaInicio: rangoMes.inicio.toISOString().split('T')[0],
+                fechaFin: rangoMes.fin.toISOString().split('T')[0],
+                infoHorario: {
+                    inicioMes: rangoMes.inicio.toLocaleString('es-ES'),
+                    finMes: rangoMes.fin.toLocaleString('es-ES')
+                }
             });
         } catch (error) {
             res.status(500).json({
                 success: false,
                 error: error.message,
-                message: 'Error al obtener pedidos de este mes'
+                message: 'Error al obtener pedidos del mes de operación'
             });
         }
     }
@@ -379,6 +395,84 @@ class PedidoController {
                 message: 'Error al obtener pedidos pendientes'
             });
         }
+    }
+
+    /**
+     * Obtener información del horario de operación
+     * @param {Object} req - Request de Express
+     * @param {Object} res - Response of Express
+     */
+    async obtenerInfoHorarioOperacion(req, res) {
+        try {
+            const infoDebug = this.operacionHorario.obtenerInfoDebug();
+            const fechaOperacion = this.operacionHorario.obtenerFechaOperacionActual();
+            const rangoOperacion = this.operacionHorario.obtenerRangoDiaOperacion(fechaOperacion);
+            
+            res.json({
+                success: true,
+                data: {
+                    horarioOperacion: {
+                        horaInicio: this.operacionHorario.HORA_INICIO_OPERACION,
+                        horaFin: this.operacionHorario.HORA_FIN_OPERACION,
+                        descripcion: '12:00 AM - 11:59 PM (medianoche a medianoche)'
+                    },
+                    fechaActual: {
+                        hora: infoDebug.horaActual,
+                        fecha: infoDebug.fechaActual,
+                        fechaOperacion: infoDebug.fechaOperacion
+                    },
+                    rangoOperacion: {
+                        inicio: rangoOperacion.inicio.toISOString(),
+                        fin: rangoOperacion.fin.toISOString(),
+                        inicioFormateado: infoDebug.inicioOperacion,
+                        finFormateado: infoDebug.finOperacion
+                    },
+                    estado: {
+                        esDiaOperacionActual: infoDebug.esDiaOperacionActual,
+                        proximoReinicio: this.obtenerProximoReinicio()
+                    }
+                },
+                message: 'Información del horario de operación obtenida exitosamente'
+            });
+        } catch (error) {
+            res.status(500).json({
+                success: false,
+                error: error.message,
+                message: 'Error al obtener información del horario de operación'
+            });
+        }
+    }
+
+    /**
+     * Obtener información del próximo reinicio de IDs
+     * @returns {Object} Información del próximo reinicio
+     */
+    obtenerProximoReinicio() {
+        const ahora = new Date();
+        const proximoReinicio = new Date(ahora);
+        
+        // Si es antes de las 12:00 AM, el reinicio será hoy a las 12:00 AM
+        if (ahora.getHours() < this.operacionHorario.HORA_INICIO_OPERACION) {
+            proximoReinicio.setHours(this.operacionHorario.HORA_INICIO_OPERACION, 0, 0, 0);
+        } else {
+            // Si es después de las 12:00 AM, el reinicio será mañana a las 12:00 AM
+            proximoReinicio.setDate(proximoReinicio.getDate() + 1);
+            proximoReinicio.setHours(this.operacionHorario.HORA_INICIO_OPERACION, 0, 0, 0);
+        }
+        
+        const tiempoRestante = proximoReinicio.getTime() - ahora.getTime();
+        const horasRestantes = Math.floor(tiempoRestante / (1000 * 60 * 60));
+        const minutosRestantes = Math.floor((tiempoRestante % (1000 * 60 * 60)) / (1000 * 60));
+        
+        return {
+            fecha: proximoReinicio.toISOString(),
+            fechaFormateada: proximoReinicio.toLocaleString('es-ES'),
+            tiempoRestante: {
+                horas: horasRestantes,
+                minutos: minutosRestantes,
+                total: tiempoRestante
+            }
+        };
     }
 
     /**

@@ -133,6 +133,20 @@ module.exports = (pedidoController) => {
 
     /**
      * @swagger
+     * /api/pedidos/horario-operacion:
+     *   get:
+     *     summary: Obtener información del horario de operación
+     *     tags: [Pedidos]
+     *     responses:
+     *       200:
+     *         description: Información del horario de operación obtenida exitosamente
+     *       500:
+     *         description: Error interno del servidor
+     */
+    router.get('/horario-operacion', pedidoController.obtenerInfoHorarioOperacion.bind(pedidoController));
+
+    /**
+     * @swagger
      * /api/pedidos/cliente:
      *   get:
      *     summary: Obtener pedidos por cliente
