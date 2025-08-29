@@ -1,6 +1,6 @@
 const IPedidoRepository = require('../../domain/repositories/IPedidoRepository');
 const Pedido = require('../../domain/entities/Pedido');
-const { rangoDiaOperacion, fmtLocal, TZ, START_HOUR } = require('../../utils/time');
+const { rangoDiaOperacion, fmtLocal, esDiaOperacionActual, TZ, START_HOUR } = require('../../utils/time');
 
 /**
  * Implementación del repositorio de pedidos usando JSON
