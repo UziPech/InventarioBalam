@@ -6,7 +6,8 @@ let productos = [];
 let productosMenu = [];
 let pedidos = [];
 let pedidoActual = {};
-let operacionHorario = new OperacionHorario();
+// Usar la nueva utilidad de tiempo global
+const timeUtils = window.TimeUtils;
 
 // Inicialización
 document.addEventListener('DOMContentLoaded', function() {
@@ -1344,11 +1345,11 @@ async function cargarPedidosPendientes() {
     // Función para actualizar estadísticas del historial usando horario de operación
     function actualizarEstadisticasHistorial() {
         // Usar el sistema de horario de operación personalizado
-        const estadisticas = operacionHorario.obtenerEstadisticasDiaOperacion(pedidos);
-        const infoDebug = operacionHorario.obtenerInfoDebug();
+        const estadisticas = timeUtils.obtenerEstadisticasDiaOperacion(pedidos);
+        const infoDebug = timeUtils.obtenerInfoDebug();
         
-        console.log(`📅 Horario de Operación - ${infoDebug.fechaOperacion}`);
-        console.log(`🕐 Rango: ${infoDebug.inicioOperacion} - ${infoDebug.finOperacion}`);
+        console.log(`📅 Horario de Operación - ${infoDebug.fechaActual.local}`);
+        console.log(`🕐 Rango: ${infoDebug.rangoOperacion.inicioLocal} - ${infoDebug.rangoOperacion.finLocal}`);
         console.log(`📊 Estadísticas del día de operación: ${estadisticas.totalPedidos} pedidos, $${estadisticas.ventas.toFixed(2)} ventas, ${estadisticas.pendientes} pendientes`);
         
         // Actualizar elementos en la interfaz
@@ -1370,28 +1371,28 @@ async function cargarPedidosPendientes() {
         
         // Mostrar información del horario de operación en consola
         console.log(`🎯 Sistema de Horario de Operación:`);
-        console.log(`   📅 Fecha de operación: ${infoDebug.fechaOperacion}`);
-        console.log(`   🕐 Hora actual: ${infoDebug.horaActual}`);
-        console.log(`   ⏰ Rango de operación: ${infoDebug.inicioOperacion} - ${infoDebug.finOperacion}`);
-        console.log(`   ✅ ¿Es día de operación actual?: ${infoDebug.esDiaOperacionActual ? 'Sí' : 'No'}`);
+        console.log(`   📅 Fecha actual: ${infoDebug.fechaActual.local}`);
+        console.log(`   🕐 Rango de operación: ${infoDebug.rangoOperacion.inicioLocal} - ${infoDebug.rangoOperacion.finLocal}`);
+        console.log(`   🔄 Próximo reinicio: ${infoDebug.proximoReinicio.local}`);
+        console.log(`   ⏱️ Tiempo restante: ${infoDebug.proximoReinicio.restante.horas}h ${infoDebug.proximoReinicio.restante.minutos}m`);
     }
 
     // Función para mostrar estadísticas de pedidos por día usando horario de operación
     function mostrarEstadisticasPedidosPorDia() {
-        const estadisticas = operacionHorario.obtenerEstadisticasDiaOperacion(pedidos);
-        const infoDebug = operacionHorario.obtenerInfoDebug();
+        const estadisticas = timeUtils.obtenerEstadisticasDiaOperacion(pedidos);
+        const infoDebug = timeUtils.obtenerInfoDebug();
         
         // Mostrar información en consola
-        console.log(`📊 Estadísticas del día de operación - ${infoDebug.fechaOperacion}`);
+        console.log(`📊 Estadísticas del día de operación - ${infoDebug.fechaActual.local}`);
         console.log(`📦 Pedidos del día de operación: ${estadisticas.totalPedidos}`);
         console.log(`💰 Ventas del día de operación: $${estadisticas.ventas.toFixed(2)}`);
         console.log(`⏳ Pedidos pendientes: ${estadisticas.pendientes}`);
         
         if (estadisticas.totalPedidos > 0) {
             console.log('📋 Lista de pedidos del día de operación:');
-            const pedidosDiaOperacion = operacionHorario.filtrarPedidosDiaOperacion(pedidos);
+            const pedidosDiaOperacion = timeUtils.filtrarPedidosDiaOperacion(pedidos);
             pedidosDiaOperacion.forEach(pedido => {
-                const hora = new Date(pedido.fecha).toLocaleTimeString('es-ES', {
+                const hora = timeUtils.fmtLocal(new Date(pedido.fecha), timeUtils.TZ, {
                     hour: '2-digit',
                     minute: '2-digit'
                 });
@@ -1419,15 +1420,15 @@ async function cargarPedidosPendientes() {
             if (response.success) {
                 const data = response.data;
                 console.log('🎯 Información del Horario de Operación:');
-                console.log(`   📅 Horario: ${data.horarioOperacion.descripcion}`);
-                console.log(`   🕐 Hora actual: ${data.fechaActual.hora}`);
-                console.log(`   📆 Fecha de operación: ${data.fechaActual.fechaOperacion}`);
-                console.log(`   ⏰ Rango de operación: ${data.rangoOperacion.inicioFormateado} - ${data.rangoOperacion.finFormateado}`);
-                console.log(`   🔄 Próximo reinicio: ${data.estado.proximoReinicio.fechaFormateada}`);
-                console.log(`   ⏱️ Tiempo restante: ${data.estado.proximoReinicio.tiempoRestante.horas}h ${data.estado.proximoReinicio.tiempoRestante.minutos}m`);
+                console.log(`   📅 Zona horaria: ${data.zonaHoraria}`);
+                console.log(`   🕐 Hora de inicio: ${data.horaInicio}:00`);
+                console.log(`   📆 Fecha actual: ${data.fechaActual.local}`);
+                console.log(`   ⏰ Rango de operación: ${data.rangoOperacion.inicioLocal} - ${data.rangoOperacion.finLocal}`);
+                console.log(`   🔄 Próximo reinicio: ${data.proximoReinicio.local}`);
+                console.log(`   ⏱️ Tiempo restante: ${data.proximoReinicio.restante.horas}h ${data.proximoReinicio.restante.minutos}m`);
                 
                 // Mostrar toast con información
-                showToast(`🕐 Horario de Operación: ${data.horarioOperacion.descripcion} | Próximo reinicio: ${data.estado.proximoReinicio.tiempoRestante.horas}h ${data.estado.proximoReinicio.tiempoRestante.minutos}m`, 'info');
+                showToast(`🕐 Horario de Operación: ${data.zonaHoraria} | Próximo reinicio: ${data.proximoReinicio.restante.horas}h ${data.proximoReinicio.restante.minutos}m`, 'info');
             }
         } catch (error) {
             console.error('Error al obtener información del horario de operación:', error);

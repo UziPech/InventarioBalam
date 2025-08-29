@@ -1,4 +1,4 @@
-const OperacionHorario = require('../../utils/OperacionHorario');
+const { rangoDiaOperacion, proximoReinicio, fmtLocal, esDiaOperacionActual, obtenerInfoDebug, TZ, START_HOUR } = require('../../utils/time');
 
 /**
  * Controlador para manejar las operaciones de pedidos
@@ -8,7 +8,7 @@ class PedidoController {
         this.pedidoRepository = pedidoRepository;
         this.procesarPedidoUseCase = procesarPedidoUseCase;
         this.procesarPedidoMenuUseCase = procesarPedidoMenuUseCase;
-        this.operacionHorario = new OperacionHorario();
+
     }
 
     /**
@@ -267,28 +267,28 @@ class PedidoController {
      */
     async obtenerPedidosHoy(req, res) {
         try {
-            // Usar el sistema de horario de operación personalizado
-            const fechaOperacion = this.operacionHorario.obtenerFechaOperacionActual();
-            const rangoOperacion = this.operacionHorario.obtenerRangoDiaOperacion(fechaOperacion);
+            // Usar el sistema de horario de operación mejorado con zona horaria
+            const nowUtc = new Date();
+            const { startUtc, endUtc, localStart } = rangoDiaOperacion(nowUtc, TZ, START_HOUR);
             
-            console.log(`🔍 Buscando pedidos del día de operación: ${fechaOperacion.toLocaleDateString('es-ES')}`);
-            console.log(`🕐 Rango de operación: ${rangoOperacion.inicio.toLocaleString('es-ES')} - ${rangoOperacion.fin.toLocaleString('es-ES')}`);
+            console.log(`🔍 Buscando pedidos del día de operación: ${fmtLocal(localStart, TZ, { dateStyle: 'full' })}`);
+            console.log(`🕐 Rango de operación: ${fmtLocal(startUtc)} - ${fmtLocal(endUtc)}`);
             
-            const pedidos = await this.pedidoRepository.obtenerPorFecha(rangoOperacion.inicio, rangoOperacion.fin);
+            const pedidos = await this.pedidoRepository.obtenerPorFecha(startUtc, endUtc);
             
             // Información de debug del horario de operación
-            const infoDebug = this.operacionHorario.obtenerInfoDebug();
+            const infoDebug = obtenerInfoDebug(nowUtc, TZ, START_HOUR);
             
             res.json({
                 success: true,
                 data: pedidos.map(p => p.toJSON()),
-                message: `Pedidos del día de operación (${fechaOperacion.toLocaleDateString('es-ES')})`,
+                message: `Pedidos del día de operación (${fmtLocal(localStart, TZ, { dateStyle: 'full' })})`,
                 total: pedidos.length,
-                fecha: fechaOperacion.toISOString().split('T')[0],
+                fecha: localStart.toISOString().split('T')[0],
                 infoHorario: {
-                    fechaOperacion: infoDebug.fechaOperacion,
-                    horaActual: infoDebug.horaActual,
-                    rangoOperacion: `${infoDebug.inicioOperacion} - ${infoDebug.finOperacion}`
+                    zonaHoraria: infoDebug.zonaHoraria,
+                    fechaActual: infoDebug.fechaActual.local,
+                    rangoOperacion: `${infoDebug.rangoOperacion.inicioLocal} - ${infoDebug.rangoOperacion.finLocal}`
                 }
             });
         } catch (error) {
@@ -404,32 +404,40 @@ class PedidoController {
      */
     async obtenerInfoHorarioOperacion(req, res) {
         try {
-            const infoDebug = this.operacionHorario.obtenerInfoDebug();
-            const fechaOperacion = this.operacionHorario.obtenerFechaOperacionActual();
-            const rangoOperacion = this.operacionHorario.obtenerRangoDiaOperacion(fechaOperacion);
-            
+            // Usa UTC como base
+            const nowUtc = new Date();
+
+            // Rango del día de operación "hoy" (en términos del negocio)
+            const { startUtc, endUtc, localStart, localEnd } = rangoDiaOperacion(nowUtc, TZ, START_HOUR);
+
+            // Próximo reinicio (siguiente inicio de día de operación)
+            const prx = proximoReinicio(nowUtc, TZ, START_HOUR);
+
             res.json({
                 success: true,
                 data: {
                     horarioOperacion: {
-                        horaInicio: this.operacionHorario.HORA_INICIO_OPERACION,
-                        horaFin: this.operacionHorario.HORA_FIN_OPERACION,
-                        descripcion: '12:00 AM - 11:59 PM (medianoche a medianoche)'
+                        zonaHoraria: TZ,
+                        horaInicio: START_HOUR,                     // 0 = 00:00 local
+                        descripcion: '00:00 — 00:00 del día siguiente (rango semiabierto [inicio, fin))'
                     },
                     fechaActual: {
-                        hora: infoDebug.horaActual,
-                        fecha: infoDebug.fechaActual,
-                        fechaOperacion: infoDebug.fechaOperacion
+                        utc: nowUtc.toISOString(),
+                        local: fmtLocal(nowUtc, TZ)
                     },
                     rangoOperacion: {
-                        inicio: rangoOperacion.inicio.toISOString(),
-                        fin: rangoOperacion.fin.toISOString(),
-                        inicioFormateado: infoDebug.inicioOperacion,
-                        finFormateado: infoDebug.finOperacion
+                        inicioUtc: startUtc.toISOString(),
+                        finUtc: endUtc.toISOString(),
+                        inicioLocal: fmtLocal(startUtc, TZ),
+                        finLocal: fmtLocal(endUtc, TZ)
                     },
                     estado: {
-                        esDiaOperacionActual: infoDebug.esDiaOperacionActual,
-                        proximoReinicio: this.obtenerProximoReinicio()
+                        esDiaOperacionActual: true, // si lo calculas, compara nowLocal ∈ [localStart, localEnd)
+                        proximoReinicio: {
+                            utc: prx.nextUtc.toISOString(),
+                            local: fmtLocal(prx.nextUtc, TZ, { dateStyle: 'full', timeStyle: 'short' }),
+                            restante: { horas: prx.horas, minutos: prx.minutos, ms: prx.msLeft }
+                        }
                     }
                 },
                 message: 'Información del horario de operación obtenida exitosamente'
@@ -443,37 +451,7 @@ class PedidoController {
         }
     }
 
-    /**
-     * Obtener información del próximo reinicio de IDs
-     * @returns {Object} Información del próximo reinicio
-     */
-    obtenerProximoReinicio() {
-        const ahora = new Date();
-        const proximoReinicio = new Date(ahora);
-        
-        // Si es antes de las 12:00 AM, el reinicio será hoy a las 12:00 AM
-        if (ahora.getHours() < this.operacionHorario.HORA_INICIO_OPERACION) {
-            proximoReinicio.setHours(this.operacionHorario.HORA_INICIO_OPERACION, 0, 0, 0);
-        } else {
-            // Si es después de las 12:00 AM, el reinicio será mañana a las 12:00 AM
-            proximoReinicio.setDate(proximoReinicio.getDate() + 1);
-            proximoReinicio.setHours(this.operacionHorario.HORA_INICIO_OPERACION, 0, 0, 0);
-        }
-        
-        const tiempoRestante = proximoReinicio.getTime() - ahora.getTime();
-        const horasRestantes = Math.floor(tiempoRestante / (1000 * 60 * 60));
-        const minutosRestantes = Math.floor((tiempoRestante % (1000 * 60 * 60)) / (1000 * 60));
-        
-        return {
-            fecha: proximoReinicio.toISOString(),
-            fechaFormateada: proximoReinicio.toLocaleString('es-ES'),
-            tiempoRestante: {
-                horas: horasRestantes,
-                minutos: minutosRestantes,
-                total: tiempoRestante
-            }
-        };
-    }
+
 
     /**
      * Cambiar estado de un pedido

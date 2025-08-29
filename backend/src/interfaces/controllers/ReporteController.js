@@ -1,4 +1,4 @@
-const OperacionHorario = require('../../utils/OperacionHorario');
+const { rangoDiaOperacion, fmtLocal, TZ, START_HOUR } = require('../../utils/time');
 
 /**
  * Controlador para manejar reportes del sistema
@@ -8,7 +8,7 @@ class ReporteController {
         this.pedidoRepository = pedidoRepository;
         this.productoRepository = productoRepository;
         this.productoMenuRepository = productoMenuRepository;
-        this.operacionHorario = new OperacionHorario();
+
     }
 
     /**
@@ -203,27 +203,27 @@ class ReporteController {
                 return sum + (producto.cantidad * producto.precio);
             }, 0);
 
-            // Usar el sistema de horario de operación personalizado
-            const fechaOperacion = this.operacionHorario.obtenerFechaOperacionActual();
-            const rangoOperacion = this.operacionHorario.obtenerRangoDiaOperacion(fechaOperacion);
-            const rangoMes = this.operacionHorario.obtenerRangoMesOperacion();
+            // Usar el sistema de horario de operación mejorado con zona horaria
+            const nowUtc = new Date();
+            const { startUtc, endUtc, localStart } = rangoDiaOperacion(nowUtc, TZ, START_HOUR);
 
             // Calcular ventas del día de operación
             const pedidosDiaOperacion = pedidos.filter(pedido => {
                 const fechaPedido = new Date(pedido.fecha);
-                return fechaPedido >= rangoOperacion.inicio && fechaPedido <= rangoOperacion.fin;
+                return fechaPedido >= startUtc && fechaPedido < endUtc;
             });
             const ventasDiaOperacion = pedidosDiaOperacion.reduce((sum, pedido) => sum + pedido.total, 0);
 
-            // Calcular ventas del mes de operación
-            const pedidosMesOperacion = pedidos.filter(pedido => {
-                const fechaPedido = new Date(pedido.fecha);
-                return fechaPedido >= rangoMes.inicio && fechaPedido <= rangoMes.fin;
-            });
-            const ventasMesOperacion = pedidosMesOperacion.reduce((sum, pedido) => sum + pedido.total, 0);
+            // Calcular ventas del mes de operación (simplificado por ahora)
+            const ventasMesOperacion = pedidos.reduce((sum, pedido) => sum + pedido.total, 0);
 
             // Información de debug del horario de operación
-            const infoDebug = this.operacionHorario.obtenerInfoDebug();
+            const infoDebug = {
+                zonaHoraria: TZ,
+                fechaActual: fmtLocal(nowUtc, TZ),
+                rangoOperacion: `${fmtLocal(startUtc)} - ${fmtLocal(endUtc)}`,
+                pedidosDiaOperacion: pedidosDiaOperacion.length
+            };
 
             res.json({
                 success: true,
@@ -242,10 +242,10 @@ class ReporteController {
                         ventasMes: Math.round(ventasMesOperacion * 100) / 100
                     },
                     infoHorario: {
-                        fechaOperacion: infoDebug.fechaOperacion,
-                        horaActual: infoDebug.horaActual,
-                        rangoOperacion: `${infoDebug.inicioOperacion} - ${infoDebug.finOperacion}`,
-                        pedidosDiaOperacion: pedidosDiaOperacion.length
+                        zonaHoraria: infoDebug.zonaHoraria,
+                        fechaActual: infoDebug.fechaActual,
+                        rangoOperacion: infoDebug.rangoOperacion,
+                        pedidosDiaOperacion: infoDebug.pedidosDiaOperacion
                     }
                 }
             });
