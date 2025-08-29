@@ -1546,8 +1546,9 @@ async function marcarComoPagado(pedidoId) {
                 cargarPedidosPendientes()
             ]);
             
-            // Actualizar UI
+            // Actualizar UI y re-renderizar historial
             actualizarEstadisticasHistorial();
+            renderizarHistorial(); // Re-renderizar para mostrar cambios visuales
             verificarPedidosPendientes();
             
             console.log('✅ Datos recargados completamente');
@@ -1598,8 +1599,9 @@ async function cancelarPedido(pedidoId) {
                 cargarPedidosPendientes()
             ]);
             
-            // Actualizar UI
+            // Actualizar UI y re-renderizar historial
             actualizarEstadisticasHistorial();
+            renderizarHistorial(); // Re-renderizar para mostrar cambios visuales
             verificarPedidosPendientes();
             
             console.log('✅ Datos recargados completamente');

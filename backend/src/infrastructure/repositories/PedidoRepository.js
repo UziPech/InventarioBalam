@@ -96,9 +96,11 @@ class PedidoRepository extends IPedidoRepository {
             pedido.fecha = nowUtc;
             
             // Obtener pedidos del día de operación actual para numeración del día
+            // Usar una comparación más robusta para evitar problemas de zona horaria
             const pedidosDiaOperacion = pedidosData.filter(p => {
                 const fechaPedido = new Date(p.fecha);
-                return fechaPedido >= startUtc && fechaPedido < endUtc;
+                // Usar la función esDiaOperacionActual para consistencia
+                return esDiaOperacionActual(fechaPedido, nowUtc, TZ, START_HOUR);
             });
             
             // Numeración del día (1, 2, 3, etc. para el día actual)
@@ -112,6 +114,7 @@ class PedidoRepository extends IPedidoRepository {
             console.log(`📅 Horario de Operación - Zona: ${TZ}`);
             console.log(`🕐 Rango: ${fmtLocal(startUtc)} - ${fmtLocal(endUtc)}`);
             console.log(`📦 Pedido #${nuevoId} (Día #${numeroDia}) creado para el día de operación: ${fmtLocal(localStart, TZ, { dateStyle: 'full' })}`);
+            console.log(`📊 Total pedidos en el día de operación: ${pedidosDiaOperacion.length + 1}`);
             
             pedidosData.push(pedido.toJSON());
             await this.database.savePedidos(pedidosData);
