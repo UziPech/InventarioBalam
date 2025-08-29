@@ -1,9 +1,33 @@
-const { zonedTimeToUtc, utcToZonedTime } = require('date-fns-tz');
+// Versión temporal sin date-fns-tz para resolver problemas de dependencias en Vercel
 const { addDays, set, startOfWeek, endOfWeek, startOfMonth, endOfMonth } = require('date-fns');
 
 // Config del negocio
 const TZ = 'America/Merida';             // Zona horaria de México (Mérida)
 const START_HOUR = 0;                    // 0 = 00:00 (medianoche)
+
+/**
+ * Función temporal para convertir UTC a hora local (sin date-fns-tz)
+ * @param {Date} dateUtc - Fecha UTC
+ * @param {string} tz - Zona horaria (opcional)
+ * @returns {Date} Fecha en hora local
+ */
+function utcToZonedTime(dateUtc, tz = TZ) {
+  // Para México (UTC-6), restamos 6 horas
+  const offset = -6 * 60 * 60 * 1000; // 6 horas en milisegundos
+  return new Date(dateUtc.getTime() + offset);
+}
+
+/**
+ * Función temporal para convertir hora local a UTC (sin date-fns-tz)
+ * @param {Date} dateLocal - Fecha en hora local
+ * @param {string} tz - Zona horaria (opcional)
+ * @returns {Date} Fecha UTC
+ */
+function zonedTimeToUtc(dateLocal, tz = TZ) {
+  // Para México (UTC-6), sumamos 6 horas
+  const offset = 6 * 60 * 60 * 1000; // 6 horas en milisegundos
+  return new Date(dateLocal.getTime() - offset);
+}
 
 /**
  * Obtener el rango del día de operación
@@ -85,38 +109,6 @@ function esDiaOperacionActual(fechaUtc, nowUtc = new Date(), tz = TZ, startHour 
 }
 
 /**
- * Obtener información de debug del horario de operación
- * @param {Date} nowUtc - Fecha UTC actual (opcional)
- * @param {string} tz - Zona horaria (opcional)
- * @param {number} startHour - Hora de inicio del día (opcional)
- * @returns {Object} Información de debug
- */
-function obtenerInfoDebug(nowUtc = new Date(), tz = TZ, startHour = START_HOUR) {
-  const { startUtc, endUtc, localStart, localEnd } = rangoDiaOperacion(nowUtc, tz, startHour);
-  const prx = proximoReinicio(nowUtc, tz, startHour);
-  
-  return {
-    zonaHoraria: tz,
-    horaInicio: startHour,
-    fechaActual: {
-      utc: nowUtc.toISOString(),
-      local: fmtLocal(nowUtc, tz)
-    },
-    rangoOperacion: {
-      inicioUtc: startUtc.toISOString(),
-      finUtc: endUtc.toISOString(),
-      inicioLocal: fmtLocal(startUtc, tz),
-      finLocal: fmtLocal(endUtc, tz)
-    },
-    proximoReinicio: {
-      utc: prx.nextUtc.toISOString(),
-      local: fmtLocal(prx.nextUtc, tz, { dateStyle: 'full', timeStyle: 'short' }),
-      restante: { horas: prx.horas, minutos: prx.minutos, ms: prx.msLeft }
-    }
-  };
-}
-
-/**
  * Obtener el rango de la semana de operación
  * @param {Date} nowUtc - Fecha UTC actual (opcional)
  * @param {string} tz - Zona horaria (opcional)
@@ -176,6 +168,38 @@ function rangoMesOperacion(nowUtc = new Date(), tz = TZ, startHour = START_HOUR)
 function obtenerFechaOperacionActual(nowUtc = new Date(), tz = TZ, startHour = START_HOUR) {
   const { localStart } = rangoDiaOperacion(nowUtc, tz, startHour);
   return localStart;
+}
+
+/**
+ * Obtener información de debug del horario de operación
+ * @param {Date} nowUtc - Fecha UTC actual (opcional)
+ * @param {string} tz - Zona horaria (opcional)
+ * @param {number} startHour - Hora de inicio del día (opcional)
+ * @returns {Object} Información de debug
+ */
+function obtenerInfoDebug(nowUtc = new Date(), tz = TZ, startHour = START_HOUR) {
+  const { startUtc, endUtc, localStart, localEnd } = rangoDiaOperacion(nowUtc, tz, startHour);
+  const prx = proximoReinicio(nowUtc, tz, startHour);
+  
+  return {
+    zonaHoraria: tz,
+    horaInicio: startHour,
+    fechaActual: {
+      utc: nowUtc.toISOString(),
+      local: fmtLocal(nowUtc, tz)
+    },
+    rangoOperacion: {
+      inicioUtc: startUtc.toISOString(),
+      finUtc: endUtc.toISOString(),
+      inicioLocal: fmtLocal(startUtc, tz),
+      finLocal: fmtLocal(endUtc, tz)
+    },
+    proximoReinicio: {
+      utc: prx.nextUtc.toISOString(),
+      local: fmtLocal(prx.nextUtc, tz, { dateStyle: 'full', timeStyle: 'short' }),
+      restante: { horas: prx.horas, minutos: prx.minutos, ms: prx.msLeft }
+    }
+  };
 }
 
 module.exports = { 
