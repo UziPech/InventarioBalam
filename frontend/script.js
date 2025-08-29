@@ -1331,19 +1331,31 @@ async function cargarPedidosPendientes() {
 
 // Función para actualizar estadísticas del historial
 function actualizarEstadisticasHistorial() {
-    // Usar fecha local sin offset (el navegador ya maneja la zona horaria)
+    // Usar fecha local real
     const hoy = new Date();
     const fechaHoy = hoy.toISOString().split('T')[0];
     
     console.log(`📅 Calculando estadísticas para: ${fechaHoy}`);
     console.log(`📅 Fecha actual del navegador: ${hoy.toLocaleDateString('es-ES')}`);
+    console.log(`📅 Hora actual: ${hoy.toLocaleTimeString('es-ES')}`);
     
-    // Contar pedidos de hoy
+    // Contar pedidos de hoy (considerando el día completo)
     const pedidosHoy = pedidos.filter(p => {
         const fechaPedido = new Date(p.fecha);
+        
+        // Verificar que la fecha del pedido no sea futura
+        if (fechaPedido > hoy) {
+            console.log(`⚠️ Pedido #${p.id} tiene fecha futura: ${fechaPedido.toLocaleString('es-ES')}`);
+            return false;
+        }
+        
+        // Comparar solo la fecha (sin hora) para considerar el día completo
         const fechaPedidoStr = fechaPedido.toISOString().split('T')[0];
         const coincide = fechaPedidoStr === fechaHoy;
-        console.log(`Pedido #${p.id}: ${fechaPedidoStr} ${coincide ? '✓' : '✗'} (hoy: ${fechaHoy})`);
+        
+        // Log detallado para debugging
+        console.log(`Pedido #${p.id}: ${fechaPedidoStr} ${coincide ? '✓' : '✗'} (hoy: ${fechaHoy}) - Hora: ${fechaPedido.toLocaleTimeString('es-ES')}`);
+        
         return coincide;
     });
     
@@ -1588,8 +1600,17 @@ async function verPedido(pedidoId) {
             const pedido = response.data;
             console.log('📋 Datos del pedido recibidos:', pedido);
             
-            // Usar fecha local sin offset
+            // Usar fecha local real y verificar que no sea futura
             const fechaPedido = new Date(pedido.fecha);
+            const ahora = new Date();
+            
+            // Si la fecha es futura, usar la fecha actual
+            if (fechaPedido > ahora) {
+                console.log(`⚠️ Pedido #${pedidoId} tiene fecha futura, usando fecha actual`);
+                fechaPedido.setTime(ahora.getTime());
+            }
+            
+            // Formatear fecha con información detallada
             const fechaFormateada = fechaPedido.toLocaleString('es-ES', {
                 year: 'numeric',
                 month: '2-digit',
@@ -1599,8 +1620,16 @@ async function verPedido(pedidoId) {
                 second: '2-digit'
             });
             
+            // Información adicional para debugging
+            const fechaDia = fechaPedido.toISOString().split('T')[0];
+            const fechaActual = ahora.toISOString().split('T')[0];
+            const esMismoDia = fechaDia === fechaActual;
+            
             console.log(`📅 Fecha original: ${pedido.fecha}`);
-            console.log(`📅 Fecha formateada: ${fechaFormateada}`);
+            console.log(`📅 Fecha corregida: ${fechaFormateada}`);
+            console.log(`📅 Día del pedido: ${fechaDia}`);
+            console.log(`📅 Día actual: ${fechaActual}`);
+            console.log(`📅 ¿Es el mismo día?: ${esMismoDia ? 'Sí' : 'No'}`);
             
             const numeroFormateado = pedido.numeroFormateado || `#${pedido.id}`;
             
@@ -1691,8 +1720,54 @@ function limpiarCacheYRecargar() {
     pedidos = [];
     pedidoActual = {};
     
-    // Recargar la página
-    window.location.reload(true);
+    // Mostrar mensaje de limpieza
+    showToast('🧹 Cache limpiado, recargando aplicación...', 'info');
+    
+    // Recargar la página después de un breve delay
+    setTimeout(() => {
+        window.location.reload(true);
+    }, 1000);
+}
+
+// Función para resetear completamente la aplicación
+async function resetearAplicacion() {
+    console.log('🔄 Reseteando aplicación completamente...');
+    showLoading();
+    
+    try {
+        // Limpiar todas las variables
+        productos = [];
+        productosMenu = [];
+        pedidos = [];
+        pedidoActual = {};
+        
+        // Limpiar cache del navegador
+        try {
+            localStorage.clear();
+            sessionStorage.clear();
+        } catch (error) {
+            console.log('⚠️ Error limpiando cache:', error);
+        }
+        
+        // Recargar datos desde cero
+        await Promise.all([
+            cargarInventario(),
+            cargarMenu(),
+            cargarHistorial()
+        ]);
+        
+        // Actualizar UI
+        actualizarEstadisticas();
+        actualizarEstadisticasHistorial();
+        verificarPedidosPendientes();
+        
+        showToast('✅ Aplicación reseteada correctamente', 'success');
+    } catch (error) {
+        console.error('❌ Error reseteando aplicación:', error);
+        showToast('Error reseteando aplicación: ' + error.message, 'error');
+    } finally {
+        hideLoading();
+    }
 }
 
 // Función para forzar sincronización completa de datos

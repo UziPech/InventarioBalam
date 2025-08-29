@@ -4,7 +4,13 @@ class Pedido {
         this.cliente = cliente;
         this.items = items || [];
         this.total = total || 0;
+        // Usar fecha actual real, no futura
         this.fecha = new Date();
+        // Verificar que la fecha no sea futura
+        const ahora = new Date();
+        if (this.fecha > ahora) {
+            this.fecha = ahora;
+        }
         this.estado = 'pendiente'; // pendiente, pagado, cancelado
     }
 
