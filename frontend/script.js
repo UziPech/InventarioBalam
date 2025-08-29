@@ -17,12 +17,18 @@ async function initializeApp() {
     showLoading();
     
     try {
-        // Cargar datos iniciales
-        await Promise.all([
-            cargarInventario(),
-            cargarMenu(),
-            cargarHistorial()
-        ]);
+        console.log('🚀 Iniciando aplicación...');
+        
+        // Limpiar cache local al inicio
+        productos = [];
+        productosMenu = [];
+        pedidos = [];
+        pedidoActual = {};
+        
+        // Cargar datos básicos primero
+        console.log('📦 Cargando datos básicos...');
+        await cargarInventario();
+        await cargarMenu();
         
         // Configurar eventos
         setupEventListeners();
@@ -31,14 +37,12 @@ async function initializeApp() {
         updateDateTime();
         setInterval(updateDateTime, 1000);
         
-        // Cargar dashboard y reportes
-        await Promise.all([
-            cargarDashboard(),
-            cargarProductosMasVendidos(),
-            cargarStockCritico()
-        ]);
+        // Cargar historial después de tener productos del menú
+        console.log('📋 Cargando historial...');
+        await cargarHistorial();
         
         // Cargar estadísticas de pedidos
+        console.log('📊 Cargando estadísticas...');
         await Promise.all([
             cargarPedidosHoy(),
             cargarPedidosEstaSemana(),
@@ -46,19 +50,19 @@ async function initializeApp() {
             cargarPedidosPendientes()
         ]);
         
-        // Mostrar estadísticas locales
+        // Actualizar todas las estadísticas
         actualizarEstadisticas();
-        mostrarEstadisticasPedidos();
-        mostrarEstadisticasPedidosPorDia();
         actualizarEstadisticasHistorial();
+        mostrarEstadisticasPedidosPorDia();
         
-        // Verificar pedidos pendientes al cargar
+        // Verificar pedidos pendientes
         verificarPedidosPendientes();
         
+        console.log('✅ Aplicación inicializada correctamente');
         showToast('Sistema cargado exitosamente', 'success');
     } catch (error) {
-        console.error('Error al inicializar:', error);
-        showToast('Error al cargar el sistema', 'error');
+        console.error('❌ Error al inicializar:', error);
+        showToast('Error al cargar el sistema: ' + error.message, 'error');
     } finally {
         hideLoading();
     }
@@ -1327,19 +1331,19 @@ async function cargarPedidosPendientes() {
 
 // Función para actualizar estadísticas del historial
 function actualizarEstadisticasHistorial() {
-    // Usar zona horaria local de México (UTC-6)
+    // Usar fecha local sin offset (el navegador ya maneja la zona horaria)
     const hoy = new Date();
-    const offset = -6 * 60; // UTC-6 en minutos
-    const fechaLocal = new Date(hoy.getTime() + (offset * 60 * 1000));
-    const fechaHoy = fechaLocal.toISOString().split('T')[0];
+    const fechaHoy = hoy.toISOString().split('T')[0];
     
     console.log(`📅 Calculando estadísticas para: ${fechaHoy}`);
+    console.log(`📅 Fecha actual del navegador: ${hoy.toLocaleDateString('es-ES')}`);
     
     // Contar pedidos de hoy
     const pedidosHoy = pedidos.filter(p => {
-        const fechaPedido = new Date(p.fecha).toISOString().split('T')[0];
-        const coincide = fechaPedido === fechaHoy;
-        console.log(`Pedido #${p.id}: ${fechaPedido} ${coincide ? '✓' : '✗'} (hoy: ${fechaHoy})`);
+        const fechaPedido = new Date(p.fecha);
+        const fechaPedidoStr = fechaPedido.toISOString().split('T')[0];
+        const coincide = fechaPedidoStr === fechaHoy;
+        console.log(`Pedido #${p.id}: ${fechaPedidoStr} ${coincide ? '✓' : '✗'} (hoy: ${fechaHoy})`);
         return coincide;
     });
     
@@ -1584,11 +1588,9 @@ async function verPedido(pedidoId) {
             const pedido = response.data;
             console.log('📋 Datos del pedido recibidos:', pedido);
             
-            // Corregir el formato de fecha usando la misma zona horaria
+            // Usar fecha local sin offset
             const fechaPedido = new Date(pedido.fecha);
-            const offset = -6 * 60; // UTC-6 en minutos
-            const fechaLocal = new Date(fechaPedido.getTime() + (offset * 60 * 1000));
-            const fechaFormateada = fechaLocal.toLocaleString('es-ES', {
+            const fechaFormateada = fechaPedido.toLocaleString('es-ES', {
                 year: 'numeric',
                 month: '2-digit',
                 day: '2-digit',
@@ -1598,7 +1600,7 @@ async function verPedido(pedidoId) {
             });
             
             console.log(`📅 Fecha original: ${pedido.fecha}`);
-            console.log(`📅 Fecha corregida: ${fechaFormateada}`);
+            console.log(`📅 Fecha formateada: ${fechaFormateada}`);
             
             const numeroFormateado = pedido.numeroFormateado || `#${pedido.id}`;
             
@@ -1670,6 +1672,29 @@ function closeDetalleModal() {
     }
 }
 
+// Función para limpiar cache y recargar completamente
+function limpiarCacheYRecargar() {
+    console.log('🧹 Limpiando cache y recargando...');
+    
+    // Limpiar localStorage si existe
+    try {
+        localStorage.clear();
+        sessionStorage.clear();
+        console.log('✅ Cache del navegador limpiado');
+    } catch (error) {
+        console.log('⚠️ No se pudo limpiar cache del navegador:', error);
+    }
+    
+    // Limpiar variables globales
+    productos = [];
+    productosMenu = [];
+    pedidos = [];
+    pedidoActual = {};
+    
+    // Recargar la página
+    window.location.reload(true);
+}
+
 // Función para forzar sincronización completa de datos
 async function forzarSincronizacion() {
     console.log('🔄 Forzando sincronización completa de datos...');
@@ -1682,11 +1707,18 @@ async function forzarSincronizacion() {
         pedidos = [];
         pedidoActual = {};
         
-        // Recargar todos los datos desde cero
+        // Recargar datos en orden secuencial para evitar conflictos
+        console.log('📦 Recargando inventario...');
+        await cargarInventario();
+        
+        console.log('🍔 Recargando menú...');
+        await cargarMenu();
+        
+        console.log('📋 Recargando historial...');
+        await cargarHistorial();
+        
+        console.log('📊 Recargando estadísticas...');
         await Promise.all([
-            cargarInventario(),
-            cargarMenu(),
-            cargarHistorial(),
             cargarPedidosHoy(),
             cargarPedidosEstaSemana(),
             cargarPedidosEsteMes(),
@@ -1696,15 +1728,14 @@ async function forzarSincronizacion() {
         // Actualizar todas las estadísticas
         actualizarEstadisticas();
         actualizarEstadisticasHistorial();
-        mostrarEstadisticasPedidos();
         mostrarEstadisticasPedidosPorDia();
         verificarPedidosPendientes();
         
         console.log('✅ Sincronización completa finalizada');
         showToast('Datos sincronizados correctamente', 'success');
     } catch (error) {
-        console.error('Error en sincronización:', error);
-        showToast('Error al sincronizar datos', 'error');
+        console.error('❌ Error en sincronización:', error);
+        showToast('Error al sincronizar datos: ' + error.message, 'error');
     } finally {
         hideLoading();
     }
