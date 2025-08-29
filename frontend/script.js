@@ -63,8 +63,11 @@ async function initializeApp() {
         // Mostrar información del horario de operación
         await mostrarInfoHorarioOperacion();
         
+        // Configurar auto-refresh para multi-dispositivo
+        configurarAutoRefresh();
+        
         console.log('✅ Aplicación inicializada correctamente');
-        showToast('Sistema cargado exitosamente', 'success');
+        showToast('Sistema cargado exitosamente - Multi-dispositivo activo', 'success');
     } catch (error) {
         console.error('❌ Error al inicializar:', error);
         showToast('Error al cargar el sistema: ' + error.message, 'error');
@@ -1833,14 +1836,74 @@ async function limpiarTodosLosPedidos() {
             actualizarEstadisticasHistorial();
             verificarPedidosPendientes();
             
-            console.log('✅ Base de datos limpiada completamente');
-        } else {
-            throw new Error(response.message || 'Error desconocido');
+                    console.log('✅ Base de datos limpiada completamente');
+    } else {
+        throw new Error(response.message || 'Error desconocido');
+    }
+} catch (error) {
+    console.error('Error al limpiar todos los pedidos:', error);
+    showToast(`Error al limpiar pedidos: ${error.message}`, 'error');
+} finally {
+    hideLoading();
+}
+}
+
+// ==================== SISTEMA MULTI-DISPOSITIVO ====================
+
+/**
+ * Configurar auto-refresh para mantener datos sincronizados entre dispositivos
+ */
+function configurarAutoRefresh() {
+    console.log('🔄 Configurando auto-refresh para multi-dispositivo...');
+    
+    // Auto-refresh cada 30 segundos para mantener datos actualizados
+    setInterval(async () => {
+        try {
+            console.log('🔄 Auto-refresh: Sincronizando datos...');
+            
+            // Recargar datos críticos
+            await Promise.all([
+                cargarInventario(),
+                cargarMenu(),
+                cargarHistorial()
+            ]);
+            
+            // Actualizar estadísticas
+            actualizarEstadisticas();
+            actualizarEstadisticasHistorial();
+            verificarPedidosPendientes();
+            
+            console.log('✅ Auto-refresh completado');
+        } catch (error) {
+            console.error('❌ Error en auto-refresh:', error);
+        }
+    }, 30000); // 30 segundos
+    
+    // Auto-refresh cada 5 segundos para pedidos pendientes
+    setInterval(async () => {
+        try {
+            await cargarPedidosPendientes();
+            verificarPedidosPendientes();
+        } catch (error) {
+            console.error('❌ Error en refresh de pedidos pendientes:', error);
+        }
+    }, 5000); // 5 segundos
+    
+    console.log('✅ Auto-refresh configurado para multi-dispositivo');
+}
+
+/**
+ * Verificar si hay cambios en el servidor
+ */
+async function verificarCambiosServidor() {
+    try {
+        // Verificar si hay nuevos pedidos o cambios
+        const response = await apiRequest('/pedidos/hoy');
+        if (response.success && response.total !== pedidos.length) {
+            console.log('🔄 Detectados cambios en el servidor, sincronizando...');
+            await forzarSincronizacion();
         }
     } catch (error) {
-        console.error('Error al limpiar todos los pedidos:', error);
-        showToast(`Error al limpiar pedidos: ${error.message}`, 'error');
-    } finally {
-        hideLoading();
+        console.error('❌ Error verificando cambios:', error);
     }
 }

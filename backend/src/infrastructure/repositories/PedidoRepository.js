@@ -91,8 +91,11 @@ class PedidoRepository extends IPedidoRepository {
                 return fechaPedido >= startUtc && fechaPedido < endUtc;
             });
             
-            // Generar nuevo ID para el día de operación actual
-            const nuevoId = pedidosDiaOperacion.length + 1;
+            // Generar ID único para evitar conflictos multi-dispositivo
+            const maxId = pedidosDiaOperacion.length > 0 
+                ? Math.max(...pedidosDiaOperacion.map(p => p.id))
+                : 0;
+            const nuevoId = maxId + 1;
             pedido.id = nuevoId;
             
             // Agregar fecha actual (UTC)

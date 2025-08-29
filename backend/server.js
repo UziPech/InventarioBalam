@@ -27,17 +27,10 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors({
-    origin: [
-        'http://localhost:8000',
-        'http://127.0.0.1:8000',
-        'http://localhost:3000',
-        'http://127.0.0.1:3000',
-        'https://inventario-balam1.vercel.app',
-        'https://inventario-balam.vercel.app'
-    ],
+    origin: true, // Permitir cualquier origen para multi-dispositivo
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 app.use(bodyParser.json());
 
@@ -111,19 +104,22 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 // Inicializar dependencias
 let database;
 
-// Usar MongoDB en producción, JSON en desarrollo
-if (process.env.NODE_ENV === 'production' && process.env.MONGODB_URI) {
-    console.log('🔗 Conectando a MongoDB en producción...');
+// Forzar uso de MongoDB para multi-dispositivo
+if (process.env.MONGODB_URI) {
+    console.log('🔗 Conectando a MongoDB Atlas para multi-dispositivo...');
     database = new MongoDatabase();
     database.connect().then(() => {
-        console.log('✅ Conectado a MongoDB exitosamente');
+        console.log('✅ Conectado a MongoDB Atlas exitosamente');
+        console.log('🌐 Sistema listo para uso multi-dispositivo');
     }).catch(err => {
-        console.error('❌ Error conectando a MongoDB, usando JSON como fallback:', err.message);
-        database = new JsonDatabase();
+        console.error('❌ Error crítico conectando a MongoDB:', err.message);
+        console.error('🚨 El sistema requiere MongoDB Atlas para funcionar correctamente');
+        process.exit(1); // Terminar si no hay MongoDB
     });
 } else {
-    console.log('📁 Usando base de datos JSON en desarrollo...');
-    database = new JsonDatabase();
+    console.error('❌ MONGODB_URI no configurado');
+    console.error('🚨 El sistema requiere MongoDB Atlas para uso multi-dispositivo');
+    process.exit(1);
 }
 
 const productoRepository = new ProductoRepository(database);
