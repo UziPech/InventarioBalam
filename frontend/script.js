@@ -840,17 +840,18 @@ function renderizarHistorial() {
     tbody.innerHTML = '';
     
     // Debug: mostrar información de los datos
+    console.log('📋 Renderizando historial con', pedidos.length, 'pedidos');
     console.log('Pedidos cargados:', pedidos);
-    console.log('Productos del menú disponibles:', productosMenu);
+    console.log('Productos del menú disponibles:', productosMenu.length, 'productos');
     
     pedidos.forEach(pedido => {
+        console.log('Procesando pedido:', pedido);
+        
         const row = document.createElement('tr');
         const fecha = new Date(pedido.fecha).toLocaleString('es-ES');
         
         // Mejorar la visualización de items
         const items = pedido.items.map(item => {
-            console.log('Procesando item:', item); // Debug
-            
             // Si el item tiene nombre, usarlo directamente
             if (item.nombre) {
                 return `${item.nombre} (${item.cantidad})`;
@@ -867,6 +868,10 @@ function renderizarHistorial() {
         // Formatear número de pedido
         const numeroPedido = pedido.numeroFormateado || `#${pedido.id}`;
         
+        // Verificar estado del pedido
+        const estado = pedido.estado || 'pendiente';
+        console.log(`Pedido #${pedido.id} - Estado: ${estado}`);
+        
         row.innerHTML = `
             <td><span class="pedido-numero">${numeroPedido}</span></td>
             <td>${pedido.cliente}</td>
@@ -874,8 +879,8 @@ function renderizarHistorial() {
             <td>$${pedido.total.toFixed(2)}</td>
             <td>${fecha}</td>
             <td>
-                <span class="status-badge ${pedido.estado}">
-                    ${pedido.estado.charAt(0).toUpperCase() + pedido.estado.slice(1)}
+                <span class="status-badge ${estado}">
+                    ${estado.charAt(0).toUpperCase() + estado.slice(1)}
                 </span>
             </td>
             <td>
@@ -883,7 +888,7 @@ function renderizarHistorial() {
                     <button class="btn btn-secondary btn-small" onclick="verPedido(${pedido.id})" title="Ver detalles">
                         <i class="fas fa-eye"></i>
                     </button>
-                    ${pedido.estado === 'pendiente' ? `
+                    ${estado === 'pendiente' ? `
                         <button class="btn btn-success btn-small" onclick="marcarComoPagado(${pedido.id})" title="Marcar como pagado">
                             <i class="fas fa-check"></i>
                         </button>
@@ -896,6 +901,8 @@ function renderizarHistorial() {
         `;
         tbody.appendChild(row);
     });
+    
+    console.log('✅ Historial renderizado correctamente');
 }
 
 // Filtrar historial
@@ -1320,13 +1327,20 @@ async function cargarPedidosPendientes() {
 
 // Función para actualizar estadísticas del historial
 function actualizarEstadisticasHistorial() {
+    // Usar zona horaria local de México (UTC-6)
     const hoy = new Date();
-    const fechaHoy = hoy.toISOString().split('T')[0];
+    const offset = -6 * 60; // UTC-6 en minutos
+    const fechaLocal = new Date(hoy.getTime() + (offset * 60 * 1000));
+    const fechaHoy = fechaLocal.toISOString().split('T')[0];
+    
+    console.log(`📅 Calculando estadísticas para: ${fechaHoy}`);
     
     // Contar pedidos de hoy
     const pedidosHoy = pedidos.filter(p => {
         const fechaPedido = new Date(p.fecha).toISOString().split('T')[0];
-        return fechaPedido === fechaHoy;
+        const coincide = fechaPedido === fechaHoy;
+        console.log(`Pedido #${p.id}: ${fechaPedido} ${coincide ? '✓' : '✗'} (hoy: ${fechaHoy})`);
+        return coincide;
     });
     
     // Contar pedidos pendientes
@@ -1447,23 +1461,39 @@ function formatearCantidad(cantidad, unidad) {
 // Marcar pedido como pagado
 async function marcarComoPagado(pedidoId) {
     try {
+        console.log(`🔄 Marcando pedido #${pedidoId} como pagado...`);
         showLoading();
+        
         const response = await apiRequest(`/pedidos/${pedidoId}/pagar`, {
             method: 'PATCH'
         });
         
+        console.log('Respuesta del servidor:', response);
+        
         if (response.success) {
             showToast(`✅ Pedido #${pedidoId} marcado como pagado`, 'success');
-            // Recargar pedidos y actualizar estadísticas
-            await cargarPedidosHoy();
+            
+            // Actualizar el pedido en la lista local
+            const pedidoIndex = pedidos.findIndex(p => p.id === pedidoId);
+            if (pedidoIndex !== -1) {
+                pedidos[pedidoIndex].estado = 'pagado';
+                console.log('Pedido actualizado en lista local:', pedidos[pedidoIndex]);
+            }
+            
+            // Recargar datos
+            await Promise.all([
+                cargarPedidosHoy(),
+                cargarHistorial()
+            ]);
+            
             actualizarEstadisticasHistorial();
             verificarPedidosPendientes();
         } else {
-            showToast('Error al marcar pedido como pagado', 'error');
+            throw new Error(response.message || 'Error desconocido');
         }
     } catch (error) {
         console.error('Error al marcar como pagado:', error);
-        showToast('Error al marcar pedido como pagado', 'error');
+        showToast(`Error al marcar pedido como pagado: ${error.message}`, 'error');
     } finally {
         hideLoading();
     }
@@ -1476,23 +1506,39 @@ async function cancelarPedido(pedidoId) {
     }
     
     try {
+        console.log(`🔄 Cancelando pedido #${pedidoId}...`);
         showLoading();
+        
         const response = await apiRequest(`/pedidos/${pedidoId}/cancelar`, {
             method: 'PATCH'
         });
         
+        console.log('Respuesta del servidor:', response);
+        
         if (response.success) {
             showToast(`❌ Pedido #${pedidoId} cancelado`, 'success');
-            // Recargar pedidos y actualizar estadísticas
-            await cargarPedidosHoy();
+            
+            // Actualizar el pedido en la lista local
+            const pedidoIndex = pedidos.findIndex(p => p.id === pedidoId);
+            if (pedidoIndex !== -1) {
+                pedidos[pedidoIndex].estado = 'cancelado';
+                console.log('Pedido actualizado en lista local:', pedidos[pedidoIndex]);
+            }
+            
+            // Recargar datos
+            await Promise.all([
+                cargarPedidosHoy(),
+                cargarHistorial()
+            ]);
+            
             actualizarEstadisticasHistorial();
             verificarPedidosPendientes();
         } else {
-            showToast('Error al cancelar pedido', 'error');
+            throw new Error(response.message || 'Error desconocido');
         }
     } catch (error) {
         console.error('Error al cancelar pedido:', error);
-        showToast('Error al cancelar pedido', 'error');
+        showToast(`Error al cancelar pedido: ${error.message}`, 'error');
     } finally {
         hideLoading();
     }

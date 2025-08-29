@@ -264,18 +264,24 @@ class PedidoController {
      */
     async obtenerPedidosHoy(req, res) {
         try {
+            // Usar zona horaria local de México (UTC-6)
             const hoy = new Date();
-            const inicioDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
-            const finDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 23, 59, 59);
+            const offset = -6 * 60; // UTC-6 en minutos
+            const fechaLocal = new Date(hoy.getTime() + (offset * 60 * 1000));
+            
+            const inicioDia = new Date(fechaLocal.getFullYear(), fechaLocal.getMonth(), fechaLocal.getDate());
+            const finDia = new Date(fechaLocal.getFullYear(), fechaLocal.getMonth(), fechaLocal.getDate(), 23, 59, 59, 999);
+            
+            console.log(`🔍 Buscando pedidos de hoy: ${inicioDia.toISOString()} a ${finDia.toISOString()}`);
             
             const pedidos = await this.pedidoRepository.obtenerPorFecha(inicioDia, finDia);
             
             res.json({
                 success: true,
                 data: pedidos.map(p => p.toJSON()),
-                message: `Pedidos de hoy (${hoy.toLocaleDateString('es-ES')})`,
+                message: `Pedidos de hoy (${fechaLocal.toLocaleDateString('es-ES')})`,
                 total: pedidos.length,
-                fecha: hoy.toISOString().split('T')[0]
+                fecha: fechaLocal.toISOString().split('T')[0]
             });
         } catch (error) {
             res.status(500).json({
