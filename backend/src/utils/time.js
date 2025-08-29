@@ -1,5 +1,5 @@
 const { zonedTimeToUtc, utcToZonedTime } = require('date-fns-tz');
-const { addDays, set } = require('date-fns');
+const { addDays, set, startOfWeek, endOfWeek, startOfMonth, endOfMonth } = require('date-fns');
 
 // Config del negocio
 const TZ = 'America/Merida';             // Zona horaria de México (Mérida)
@@ -116,12 +116,77 @@ function obtenerInfoDebug(nowUtc = new Date(), tz = TZ, startHour = START_HOUR) 
   };
 }
 
+/**
+ * Obtener el rango de la semana de operación
+ * @param {Date} nowUtc - Fecha UTC actual (opcional)
+ * @param {string} tz - Zona horaria (opcional)
+ * @param {number} startHour - Hora de inicio del día (opcional)
+ * @returns {Object} Rango de la semana de operación
+ */
+function rangoSemanaOperacion(nowUtc = new Date(), tz = TZ, startHour = START_HOUR) {
+  const nowLocal = utcToZonedTime(nowUtc, tz);
+  
+  // Obtener inicio y fin de la semana en hora local
+  const inicioSemanaLocal = startOfWeek(nowLocal, { weekStartsOn: 1 }); // Lunes
+  const finSemanaLocal = endOfWeek(nowLocal, { weekStartsOn: 1 }); // Domingo
+  
+  // Ajustar a la hora de inicio del día de operación
+  const inicioLocal = set(inicioSemanaLocal, { hours: startHour, minutes: 0, seconds: 0, milliseconds: 0 });
+  const finLocal = set(finSemanaLocal, { hours: startHour, minutes: 0, seconds: 0, milliseconds: 0 });
+  
+  // Convertir a UTC
+  const inicioUtc = zonedTimeToUtc(inicioLocal, tz);
+  const finUtc = zonedTimeToUtc(finLocal, tz);
+  
+  return { inicio: inicioUtc, fin: finUtc, inicioLocal, finLocal };
+}
+
+/**
+ * Obtener el rango del mes de operación
+ * @param {Date} nowUtc - Fecha UTC actual (opcional)
+ * @param {string} tz - Zona horaria (opcional)
+ * @param {number} startHour - Hora de inicio del día (opcional)
+ * @returns {Object} Rango del mes de operación
+ */
+function rangoMesOperacion(nowUtc = new Date(), tz = TZ, startHour = START_HOUR) {
+  const nowLocal = utcToZonedTime(nowUtc, tz);
+  
+  // Obtener inicio y fin del mes en hora local
+  const inicioMesLocal = startOfMonth(nowLocal);
+  const finMesLocal = endOfMonth(nowLocal);
+  
+  // Ajustar a la hora de inicio del día de operación
+  const inicioLocal = set(inicioMesLocal, { hours: startHour, minutes: 0, seconds: 0, milliseconds: 0 });
+  const finLocal = set(finMesLocal, { hours: startHour, minutes: 0, seconds: 0, milliseconds: 0 });
+  
+  // Convertir a UTC
+  const inicioUtc = zonedTimeToUtc(inicioLocal, tz);
+  const finUtc = zonedTimeToUtc(finLocal, tz);
+  
+  return { inicio: inicioUtc, fin: finUtc, inicioLocal, finLocal };
+}
+
+/**
+ * Obtener la fecha de operación actual
+ * @param {Date} nowUtc - Fecha UTC actual (opcional)
+ * @param {string} tz - Zona horaria (opcional)
+ * @param {number} startHour - Hora de inicio del día (opcional)
+ * @returns {Date} Fecha de operación actual
+ */
+function obtenerFechaOperacionActual(nowUtc = new Date(), tz = TZ, startHour = START_HOUR) {
+  const { localStart } = rangoDiaOperacion(nowUtc, tz, startHour);
+  return localStart;
+}
+
 module.exports = { 
   rangoDiaOperacion, 
   proximoReinicio, 
   fmtLocal, 
   esDiaOperacionActual,
   obtenerInfoDebug,
+  rangoSemanaOperacion,
+  rangoMesOperacion,
+  obtenerFechaOperacionActual,
   TZ, 
   START_HOUR 
 };

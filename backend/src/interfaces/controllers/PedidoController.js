@@ -1,4 +1,4 @@
-const { rangoDiaOperacion, proximoReinicio, fmtLocal, esDiaOperacionActual, obtenerInfoDebug, TZ, START_HOUR } = require('../../utils/time');
+const { rangoDiaOperacion, proximoReinicio, fmtLocal, esDiaOperacionActual, obtenerInfoDebug, rangoSemanaOperacion, rangoMesOperacion, obtenerFechaOperacionActual, TZ, START_HOUR } = require('../../utils/time');
 
 /**
  * Controlador para manejar las operaciones de pedidos
@@ -307,11 +307,11 @@ class PedidoController {
      */
     async obtenerPedidosEstaSemana(req, res) {
         try {
-            // Usar el sistema de horario de operación personalizado
-            const rangoSemana = this.operacionHorario.obtenerRangoSemanaOperacion();
+            // Usar el sistema de horario de operación mejorado con zona horaria
+            const rangoSemana = rangoSemanaOperacion(new Date(), TZ, START_HOUR);
             
             console.log(`🔍 Buscando pedidos de la semana de operación`);
-            console.log(`🕐 Rango: ${rangoSemana.inicio.toLocaleString('es-ES')} - ${rangoSemana.fin.toLocaleString('es-ES')}`);
+            console.log(`🕐 Rango: ${fmtLocal(rangoSemana.inicio)} - ${fmtLocal(rangoSemana.fin)}`);
             
             const pedidos = await this.pedidoRepository.obtenerPorFecha(rangoSemana.inicio, rangoSemana.fin);
             
@@ -323,8 +323,8 @@ class PedidoController {
                 fechaInicio: rangoSemana.inicio.toISOString().split('T')[0],
                 fechaFin: rangoSemana.fin.toISOString().split('T')[0],
                 infoHorario: {
-                    inicioSemana: rangoSemana.inicio.toLocaleString('es-ES'),
-                    finSemana: rangoSemana.fin.toLocaleString('es-ES')
+                    inicioSemana: fmtLocal(rangoSemana.inicio),
+                    finSemana: fmtLocal(rangoSemana.fin)
                 }
             });
         } catch (error) {
@@ -343,25 +343,25 @@ class PedidoController {
      */
     async obtenerPedidosEsteMes(req, res) {
         try {
-            // Usar el sistema de horario de operación personalizado
-            const rangoMes = this.operacionHorario.obtenerRangoMesOperacion();
-            const fechaOperacion = this.operacionHorario.obtenerFechaOperacionActual();
+            // Usar el sistema de horario de operación mejorado con zona horaria
+            const rangoMes = rangoMesOperacion(new Date(), TZ, START_HOUR);
+            const fechaOperacion = obtenerFechaOperacionActual(new Date(), TZ, START_HOUR);
             
             console.log(`🔍 Buscando pedidos del mes de operación`);
-            console.log(`🕐 Rango: ${rangoMes.inicio.toLocaleString('es-ES')} - ${rangoMes.fin.toLocaleString('es-ES')}`);
+            console.log(`🕐 Rango: ${fmtLocal(rangoMes.inicio)} - ${fmtLocal(rangoMes.fin)}`);
             
             const pedidos = await this.pedidoRepository.obtenerPorFecha(rangoMes.inicio, rangoMes.fin);
             
             res.json({
                 success: true,
                 data: pedidos.map(p => p.toJSON()),
-                message: `Pedidos del mes de operación (${fechaOperacion.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })})`,
+                message: `Pedidos del mes de operación (${fmtLocal(fechaOperacion, TZ, { month: 'long', year: 'numeric' })})`,
                 total: pedidos.length,
                 fechaInicio: rangoMes.inicio.toISOString().split('T')[0],
                 fechaFin: rangoMes.fin.toISOString().split('T')[0],
                 infoHorario: {
-                    inicioMes: rangoMes.inicio.toLocaleString('es-ES'),
-                    finMes: rangoMes.fin.toLocaleString('es-ES')
+                    inicioMes: fmtLocal(rangoMes.inicio),
+                    finMes: fmtLocal(rangoMes.fin)
                 }
             });
         } catch (error) {
