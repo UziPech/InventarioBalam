@@ -116,7 +116,14 @@ class PedidoRepository extends IPedidoRepository {
             console.log(`📦 Pedido #${nuevoId} (Día #${numeroDia}) creado para el día de operación: ${fmtLocal(localStart, TZ, { dateStyle: 'full' })}`);
             console.log(`📊 Total pedidos en el día de operación: ${pedidosDiaOperacion.length + 1}`);
             
-            pedidosData.push(pedido.toJSON());
+            // Guardar el pedido con toda la información incluida
+            const pedidoParaGuardar = {
+                ...pedido.toJSON(),
+                numeroDia: numeroDia,
+                fechaCreacion: localStart.toISOString().split('T')[0]
+            };
+            
+            pedidosData.push(pedidoParaGuardar);
             await this.database.savePedidos(pedidosData);
             
             console.log(`✅ Pedido #${nuevoId} (Día #${numeroDia}) guardado exitosamente`);

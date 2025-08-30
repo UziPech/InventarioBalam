@@ -800,7 +800,8 @@ async function crearPedido() {
             await Promise.all([
                 cargarInventario(),
                 cargarMenu(),
-                cargarPedidosHoy() // Cargar pedidos de hoy específicamente
+                cargarHistorial(), // Cargar historial completo en lugar de solo pedidos de hoy
+                cargarPedidosHoy() // También cargar pedidos de hoy para estadísticas
             ]);
             
             // Actualizar estadísticas del historial
@@ -866,15 +867,24 @@ async function cargarHistorial() {
 // Renderizar tabla de historial
 function renderizarHistorial() {
     const tbody = document.getElementById('historialTable');
+    if (!tbody) {
+        console.error('❌ No se encontró la tabla de historial');
+        return;
+    }
+    
     tbody.innerHTML = '';
     
-    // Debug: mostrar información de los datos
-    console.log('📋 Renderizando historial con', pedidos.length, 'pedidos');
-    console.log('Pedidos cargados:', pedidos);
-    console.log('Productos del menú disponibles:', productosMenu.length, 'productos');
+    if (!pedidos || pedidos.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay pedidos para mostrar</td></tr>';
+        return;
+    }
     
-    pedidos.forEach(pedido => {
-        console.log('Procesando pedido:', pedido);
+    console.log(`📋 Renderizando ${pedidos.length} pedidos en el historial`);
+    
+    // Ordenar pedidos por fecha (más recientes primero)
+    const pedidosOrdenados = [...pedidos].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+    
+    pedidosOrdenados.forEach(pedido => {
         
         const row = document.createElement('tr');
         
@@ -910,7 +920,9 @@ function renderizarHistorial() {
         
         // Verificar estado del pedido
         const estado = pedido.estado || 'pendiente';
-        console.log(`Pedido #${pedido.id} (Día #${pedido.numeroDia || pedido.id}) - Estado: ${estado} - Fecha: ${fecha}`);
+        
+        // Debug: mostrar información detallada del pedido
+        console.log(`📦 Pedido ID: ${pedido.id}, NumeroDia: ${pedido.numeroDia}, NumeroMostrado: ${numeroPedido}, Estado: ${estado}, Fecha: ${fecha}`);
         
         row.innerHTML = `
             <td><span class="pedido-numero">${numeroPedido}</span></td>
