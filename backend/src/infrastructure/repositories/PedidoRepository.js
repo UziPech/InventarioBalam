@@ -96,11 +96,17 @@ class PedidoRepository extends IPedidoRepository {
             pedido.fecha = nowUtc;
             
             // Obtener pedidos del día de operación actual para numeración del día
-            // Usar una comparación más robusta para evitar problemas de zona horaria
+            // Simplificar la lógica para evitar problemas con el sistema de horarios
             const pedidosDiaOperacion = pedidosData.filter(p => {
                 const fechaPedido = new Date(p.fecha);
-                // Usar la función esDiaOperacionActual para consistencia
-                return esDiaOperacionActual(fechaPedido, nowUtc, TZ, START_HOUR);
+                const fechaPedidoLocal = new Date(fechaPedido.getTime() - (6 * 60 * 60 * 1000)); // UTC-6
+                const nowLocal = new Date(nowUtc.getTime() - (6 * 60 * 60 * 1000)); // UTC-6
+                
+                // Comparar solo la fecha (sin hora) para determinar si es el mismo día
+                const fechaPedidoStr = fechaPedidoLocal.toISOString().split('T')[0];
+                const nowStr = nowLocal.toISOString().split('T')[0];
+                
+                return fechaPedidoStr === nowStr;
             });
             
             // Numeración del día (1, 2, 3, etc. para el día actual)
