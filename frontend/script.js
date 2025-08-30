@@ -73,6 +73,9 @@ async function initializeApp() {
         // Mostrar información del horario de operación
         await mostrarInfoHorarioOperacion();
         
+        // Inicializar reportes
+        inicializarReportes();
+        
         // Configurar auto-refresh para multi-dispositivo
         configurarAutoRefresh();
         
@@ -241,6 +244,9 @@ async function agregarProducto() {
             document.getElementById('formAgregarProducto').reset();
             await cargarInventario();
             actualizarEstadisticas();
+            
+            // Actualizar reportes automáticamente
+            await actualizarReportes();
         } else {
             throw new Error(data.message);
         }
@@ -304,6 +310,9 @@ async function actualizarProducto() {
             closeModal('editarProducto');
             await cargarInventario();
             actualizarEstadisticas();
+            
+            // Actualizar reportes automáticamente
+            await actualizarReportes();
         } else {
             throw new Error(data.message);
         }
@@ -332,6 +341,9 @@ async function eliminarProducto(id) {
             showToast('Producto eliminado exitosamente', 'success');
             await cargarInventario();
             actualizarEstadisticas();
+            
+            // Actualizar reportes automáticamente
+            await actualizarReportes();
         } else {
             throw new Error(data.message);
         }
@@ -496,6 +508,9 @@ async function agregarProductoMenu() {
             document.getElementById('formAgregarProductoMenu').reset();
             await cargarMenu();
             actualizarEstadisticas();
+            
+            // Actualizar reportes automáticamente
+            await actualizarReportes();
         } else {
             throw new Error(data.message);
         }
@@ -597,6 +612,9 @@ async function actualizarProductoMenu(id) {
             
             await cargarMenu();
             actualizarEstadisticas();
+            
+            // Actualizar reportes automáticamente
+            await actualizarReportes();
         } else {
             throw new Error(data.message);
         }
@@ -622,6 +640,9 @@ async function toggleProductoMenu(id, activo) {
             showToast(`Producto ${activo ? 'activado' : 'desactivado'} exitosamente`, 'success');
             await cargarMenu();
             actualizarEstadisticas();
+            
+            // Actualizar reportes automáticamente
+            await actualizarReportes();
         } else {
             throw new Error(data.message);
         }
@@ -650,6 +671,9 @@ async function eliminarProductoMenu(id) {
             showToast('Producto del menú eliminado exitosamente', 'success');
             await cargarMenu();
             actualizarEstadisticas();
+            
+            // Actualizar reportes automáticamente
+            await actualizarReportes();
         } else {
             throw new Error(data.message);
         }
@@ -807,6 +831,9 @@ async function crearPedido() {
             // Actualizar estadísticas del historial
             actualizarEstadisticasHistorial();
             mostrarEstadisticasPedidosPorDia();
+            
+            // Actualizar reportes automáticamente
+            await actualizarReportes();
             
             // Mostrar cambios en el inventario
             mostrarCambiosInventario(productosAnteriores, productos);
@@ -986,6 +1013,11 @@ async function generarReporte() {
         return;
     }
     
+    if (new Date(fechaInicio) > new Date(fechaFin)) {
+        showToast('La fecha de inicio no puede ser mayor a la fecha de fin', 'warning');
+        return;
+    }
+    
     try {
         showLoading();
         const response = await apiRequest(`/reportes/ventas?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`);
@@ -1006,38 +1038,40 @@ async function generarReporte() {
 
 // Mostrar reporte de ventas
 function mostrarReporteVentas(data) {
-    const reporteContainer = document.getElementById('reporteResultado');
+    const reporteContainer = document.getElementById('ventasReporte');
     if (!reporteContainer) return;
+    
+    const { periodo, resumen, ventasPorDia } = data;
     
     reporteContainer.innerHTML = `
         <div class="reporte-section">
-            <h3>Resumen del Período</h3>
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <h4>Total Ventas</h4>
-                    <p>$${data.resumen.totalVentas.toFixed(2)}</p>
+            <h4>📊 Resumen del Período (${periodo.fechaInicio} - ${periodo.fechaFin})</h4>
+            <div class="stats-summary">
+                <div class="stat-item">
+                    <span class="stat-label">Total Ventas</span>
+                    <span class="stat-value">$${resumen.totalVentas.toFixed(2)}</span>
                 </div>
-                <div class="stat-card">
-                    <h4>Total Pedidos</h4>
-                    <p>${data.resumen.totalPedidos}</p>
+                <div class="stat-item">
+                    <span class="stat-label">Total Pedidos</span>
+                    <span class="stat-value">${resumen.totalPedidos}</span>
                 </div>
-                <div class="stat-card">
-                    <h4>Promedio por Pedido</h4>
-                    <p>$${data.resumen.promedioPorPedido.toFixed(2)}</p>
+                <div class="stat-item">
+                    <span class="stat-label">Promedio por Pedido</span>
+                    <span class="stat-value">$${resumen.promedioPorPedido.toFixed(2)}</span>
                 </div>
             </div>
         </div>
         
         <div class="reporte-section">
-            <h3>Ventas por Día</h3>
+            <h4>📅 Ventas por Día</h4>
             <div class="ventas-dia">
-                ${data.ventasPorDia.map(dia => `
+                ${ventasPorDia.length > 0 ? ventasPorDia.map(dia => `
                     <div class="dia-venta">
                         <span class="fecha">${dia.fecha}</span>
                         <span class="ventas">$${dia.ventas.toFixed(2)}</span>
                         <span class="pedidos">${dia.pedidos} pedidos</span>
                     </div>
-                `).join('')}
+                `).join('') : '<p class="text-muted">No hay ventas en este período</p>'}
             </div>
         </div>
     `;
@@ -1060,19 +1094,15 @@ async function cargarDashboard() {
 function actualizarEstadisticasDashboard(data) {
     // Inventario
     const totalProductosEl = document.getElementById('totalProductos');
-    const stockBajoEl = document.getElementById('stockBajo');
     const valorInventarioEl = document.getElementById('valorInventario');
     
     if (totalProductosEl) totalProductosEl.textContent = data.inventario.totalProductos;
-    if (stockBajoEl) stockBajoEl.textContent = data.inventario.totalProductos; // Temporal
     if (valorInventarioEl) valorInventarioEl.textContent = '$' + data.inventario.valorTotal.toFixed(2);
     
     // Menú
     const totalMenuEl = document.getElementById('totalMenu');
-    const menuActivosEl = document.getElementById('menuActivos');
     
     if (totalMenuEl) totalMenuEl.textContent = data.menu.totalProductos;
-    if (menuActivosEl) menuActivosEl.textContent = data.menu.productosActivos;
     
     // Ventas
     const totalPedidosEl = document.getElementById('totalPedidos');
@@ -1099,16 +1129,32 @@ async function cargarProductosMasVendidos() {
 
 // Mostrar productos más vendidos
 function mostrarProductosMasVendidos(productos) {
-    const container = document.getElementById('productosMasVendidos');
+    const container = document.getElementById('productosVendidos');
     if (!container) return;
     
-    container.innerHTML = productos.map(producto => `
-        <div class="producto-vendido">
-            <span class="nombre">${producto.nombre}</span>
-            <span class="cantidad">${producto.cantidadVendida} vendidos</span>
-            <span class="total">$${producto.totalVentas.toFixed(2)}</span>
+    if (productos.length === 0) {
+        container.innerHTML = '<p class="text-muted">No hay productos vendidos aún</p>';
+        return;
+    }
+    
+    container.innerHTML = `
+        <div class="productos-vendidos-list">
+            ${productos.map((producto, index) => `
+                <div class="producto-vendido">
+                    <div class="producto-rank">
+                        <span class="rank-number">${index + 1}</span>
+                    </div>
+                    <div class="producto-info">
+                        <span class="nombre">${producto.nombre}</span>
+                        <span class="cantidad">${producto.cantidadVendida} vendidos</span>
+                    </div>
+                    <div class="producto-total">
+                        <span class="total">$${producto.totalVentas.toFixed(2)}</span>
+                    </div>
+                </div>
+            `).join('')}
         </div>
-    `).join('');
+    `;
 }
 
 // Cargar stock crítico
@@ -1117,7 +1163,7 @@ async function cargarStockCritico() {
         const response = await apiRequest('/reportes/stock-critico?limiteStock=10');
         
         if (response.success) {
-            mostrarStockCritico(response.data.productos);
+            mostrarStockCritico(response.data);
         }
     } catch (error) {
         console.error('Error al cargar stock crítico:', error);
@@ -1125,17 +1171,84 @@ async function cargarStockCritico() {
 }
 
 // Mostrar stock crítico
-function mostrarStockCritico(productos) {
+function mostrarStockCritico(data) {
     const container = document.getElementById('stockCritico');
     if (!container) return;
     
-    container.innerHTML = productos.map(producto => `
-        <div class="producto-critico ${producto.estado === 'Agotado' ? 'agotado' : 'stock-bajo'}">
-            <span class="nombre">${producto.nombre}</span>
-            <span class="cantidad">${producto.cantidad} ${producto.unidad}</span>
-            <span class="estado">${producto.estado}</span>
+    const { productos, resumen } = data;
+    
+    if (productos.length === 0) {
+        container.innerHTML = '<p class="text-muted">No hay productos con stock crítico</p>';
+        return;
+    }
+    
+    container.innerHTML = `
+        <div class="stock-critico-summary">
+            <div class="stats-summary">
+                <div class="stat-item">
+                    <span class="stat-label">Total Crítico</span>
+                    <span class="stat-value">${resumen.totalProductos}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Agotados</span>
+                    <span class="stat-value">${resumen.productosAgotados}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Stock Bajo</span>
+                    <span class="stat-value">${resumen.productosStockBajo}</span>
+                </div>
+            </div>
         </div>
-    `).join('');
+        
+        <div class="stock-critico-list">
+            ${productos.map(producto => `
+                <div class="producto-stock-critico ${producto.estado === 'Agotado' ? 'agotado' : 'stock-bajo'}">
+                    <div class="producto-info">
+                        <span class="nombre">${producto.nombre}</span>
+                        <span class="estado">${producto.estado}</span>
+                    </div>
+                    <div class="producto-stock">
+                        <span class="cantidad">${producto.cantidad} ${producto.unidad}</span>
+                        <span class="precio">$${producto.precio.toFixed(2)}</span>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+// Inicializar reportes cuando se carga la página
+function inicializarReportes() {
+    // Establecer fechas por defecto (últimos 7 días)
+    const fechaFin = new Date();
+    const fechaInicio = new Date();
+    fechaInicio.setDate(fechaInicio.getDate() - 7);
+    
+    document.getElementById('reporteFechaInicio').value = fechaInicio.toISOString().split('T')[0];
+    document.getElementById('reporteFechaFin').value = fechaFin.toISOString().split('T')[0];
+    
+    // Cargar datos iniciales
+    cargarDashboard();
+    cargarProductosMasVendidos();
+    cargarStockCritico();
+}
+
+// Actualizar todos los reportes automáticamente
+async function actualizarReportes() {
+    try {
+        console.log('📊 Actualizando reportes automáticamente...');
+        
+        // Actualizar dashboard y reportes en paralelo
+        await Promise.all([
+            cargarDashboard(),
+            cargarProductosMasVendidos(),
+            cargarStockCritico()
+        ]);
+        
+        console.log('✅ Reportes actualizados correctamente');
+    } catch (error) {
+        console.error('❌ Error al actualizar reportes:', error);
+    }
 }
 
 // Actualizar estadísticas (función local)

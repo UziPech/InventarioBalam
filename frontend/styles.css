@@ -1130,3 +1130,249 @@ body {
     font-weight: bold;
     margin-right: 0.5rem;
 }
+
+/* Estilos para Reportes */
+.reporte-section {
+    margin-bottom: 2rem;
+}
+
+.reporte-section h4 {
+    color: #333;
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+    border-bottom: 2px solid #667eea;
+    padding-bottom: 0.5rem;
+}
+
+.text-muted {
+    color: #666;
+    font-style: italic;
+    text-align: center;
+    padding: 2rem;
+}
+
+/* Estadísticas de reportes */
+.stats-summary {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    flex-wrap: wrap;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    min-width: 120px;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: #666;
+    font-weight: 500;
+}
+
+.stat-value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #667eea;
+}
+
+/* Ventas por día */
+.ventas-dia {
+    display: grid;
+    gap: 0.5rem;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.dia-venta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.dia-venta .fecha {
+    font-weight: 600;
+    color: #333;
+}
+
+.dia-venta .ventas {
+    color: #667eea;
+    font-weight: 600;
+}
+
+.dia-venta .pedidos {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+/* Productos más vendidos */
+.productos-vendidos-list {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.producto-vendido {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.producto-rank {
+    width: 30px;
+    height: 30px;
+    background: #667eea;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.producto-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.producto-info .nombre {
+    font-weight: 600;
+    color: #333;
+}
+
+.producto-info .cantidad {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.producto-total .total {
+    font-weight: 600;
+    color: #667eea;
+}
+
+/* Stock crítico */
+.stock-critico-summary {
+    margin-bottom: 1rem;
+}
+
+.stock-critico-list {
+    display: grid;
+    gap: 0.5rem;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.producto-stock-critico {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.producto-stock-critico.agotado {
+    background: rgba(220, 53, 69, 0.1);
+    border-color: #dc3545;
+}
+
+.producto-stock-critico.stock-bajo {
+    background: rgba(255, 193, 7, 0.1);
+    border-color: #ffc107;
+}
+
+.producto-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.producto-info .nombre {
+    font-weight: 600;
+    color: #333;
+}
+
+.producto-info .estado {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.agotado .estado {
+    background: #dc3545;
+    color: white;
+}
+
+.stock-bajo .estado {
+    background: #ffc107;
+    color: #333;
+}
+
+.producto-stock {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+}
+
+.producto-stock .cantidad {
+    font-weight: 600;
+    color: #333;
+}
+
+.producto-stock .precio {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+/* Responsive para reportes */
+@media (max-width: 768px) {
+    .stats-summary {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .stat-item {
+        min-width: auto;
+    }
+    
+    .dia-venta {
+        flex-direction: column;
+        gap: 0.5rem;
+        text-align: center;
+    }
+    
+    .producto-vendido {
+        flex-direction: column;
+        gap: 0.5rem;
+        text-align: center;
+    }
+    
+    .producto-stock-critico {
+        flex-direction: column;
+        gap: 0.5rem;
+        text-align: center;
+    }
+    
+    .producto-stock {
+        align-items: center;
+    }
+}
