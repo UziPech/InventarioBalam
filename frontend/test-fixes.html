@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Test Correcciones - Inventario BalamKin</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .test-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .test-title {
+            color: var(--primary);
+            margin-bottom: 16px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .test-button {
+            background: var(--primary);
+            color: var(--bg);
+            border: none;
+            padding: 12px 24px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            margin: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .test-button:hover {
+            background: var(--primary-600);
+            transform: translateY(-2px);
+        }
+        
+        .test-result {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 12px;
+            margin: 12px 0;
+            font-family: monospace;
+            font-size: 12px;
+            color: var(--text);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <img src="assets/logo/logo_balamkin.png" alt="BalamKin Logo">
+                <span>BALAMKIN</span>
+            </div>
+            <h1>🧪 Test de Correcciones</h1>
+            <div class="datetime">
+                <div id="currentDate">Cargando...</div>
+                <div id="currentTime">Cargando...</div>
+            </div>
+        </header>
+
+        <main class="main">
+            <!-- Test de Notificaciones -->
+            <div class="test-section">
+                <div class="test-title">🔔 Test de Notificaciones</div>
+                <p>Prueba el sistema de notificaciones toast:</p>
+                <button class="test-button" onclick="probarNotificaciones()">
+                    🧪 Probar Notificaciones
+                </button>
+                <button class="test-button" onclick="showToast('✅ Notificación manual de éxito', 'success')">
+                    ✅ Éxito
+                </button>
+                <button class="test-button" onclick="showToast('⚠️ Notificación manual de advertencia', 'warning')">
+                    ⚠️ Advertencia
+                </button>
+                <button class="test-button" onclick="showToast('❌ Notificación manual de error', 'error')">
+                    ❌ Error
+                </button>
+                <button class="test-button" onclick="showToast('ℹ️ Notificación manual informativa', 'info')">
+                    ℹ️ Info
+                </button>
+            </div>
+
+            <!-- Test de Responsividad -->
+            <div class="test-section">
+                <div class="test-title">📱 Test de Responsividad</div>
+                <p>Prueba la responsividad móvil:</p>
+                <button class="test-button" onclick="probarResponsividad()">
+                    📱 Probar Responsividad
+                </button>
+                <div class="test-result">
+                    <strong>Instrucciones:</strong><br>
+                    1. Abre las herramientas de desarrollo (F12)<br>
+                    2. Cambia a modo móvil (Toggle device toolbar)<br>
+                    3. Prueba diferentes tamaños de pantalla<br>
+                    4. Verifica que los botones y elementos se vean bien
+                </div>
+            </div>
+
+            <!-- Test de Stock Crítico -->
+            <div class="test-section">
+                <div class="test-title">📦 Test de Stock Crítico</div>
+                <p>Prueba el diseño del stock crítico:</p>
+                <div class="stock-critico-list">
+                    <div class="producto-stock-critico stock-bajo">
+                        <div class="producto-info">
+                            <span class="nombre">Cebolla</span>
+                            <span class="estado">Stock Bajo</span>
+                        </div>
+                        <div class="producto-stock">
+                            <span class="cantidad">2.92 kg</span>
+                            <span class="precio">$4.00</span>
+                        </div>
+                    </div>
+                    <div class="producto-stock-critico agotado">
+                        <div class="producto-info">
+                            <span class="nombre">Mayonesa</span>
+                            <span class="estado">Agotado</span>
+                        </div>
+                        <div class="producto-stock">
+                            <span class="cantidad">0 L</span>
+                            <span class="precio">$3.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Test de Filtros del Historial -->
+            <div class="test-section">
+                <div class="test-title">📋 Test de Filtros del Historial</div>
+                <p>Prueba los botones de filtro responsivos:</p>
+                <div class="historial-filtros">
+                    <button class="filtro-btn btn-primary">
+                        <i class="fas fa-calendar-day"></i> Hoy
+                    </button>
+                    <button class="filtro-btn btn-secondary">
+                        <i class="fas fa-calendar-week"></i> Esta Semana
+                    </button>
+                    <button class="filtro-btn btn-warning">
+                        <i class="fas fa-clock"></i> Pendientes
+                    </button>
+                    <button class="filtro-btn btn-info">
+                        <i class="fas fa-list"></i> Todos
+                    </button>
+                    <button class="filtro-btn btn-success">
+                        <i class="fas fa-sync-alt"></i> Sincronizar
+                    </button>
+                    <button class="filtro-btn btn-danger">
+                        <i class="fas fa-trash-alt"></i> Limpiar BD
+                    </button>
+                </div>
+            </div>
+
+            <!-- Resultados del Test -->
+            <div class="test-section">
+                <div class="test-title">📊 Resultados del Test</div>
+                <div id="testResults" class="test-result">
+                    Ejecuta las pruebas para ver los resultados...
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast" class="toast"></div>
+
+    <script src="script.js"></script>
+    <script>
+        // Actualizar fecha y hora
+        function updateDateTime() {
+            const now = new Date();
+            const dateOptions = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            };
+            const timeOptions = { 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit' 
+            };
+            
+            document.getElementById('currentDate').textContent = now.toLocaleDateString('es-ES', dateOptions);
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString('es-ES', timeOptions);
+        }
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+            
+            // Mostrar notificación de bienvenida
+            setTimeout(() => {
+                showToast('🧪 Página de prueba cargada correctamente', 'success');
+            }, 1000);
+        });
+
+        // Función para mostrar resultados del test
+        function mostrarResultado(mensaje) {
+            const resultsDiv = document.getElementById('testResults');
+            const timestamp = new Date().toLocaleTimeString();
+            resultsDiv.innerHTML += `[${timestamp}] ${mensaje}<br>`;
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        // Sobrescribir funciones de prueba para mostrar resultados
+        const originalProbarNotificaciones = window.probarNotificaciones;
+        window.probarNotificaciones = function() {
+            mostrarResultado('🧪 Iniciando prueba de notificaciones...');
+            originalProbarNotificaciones();
+            mostrarResultado('✅ Prueba de notificaciones completada');
+        };
+
+        const originalProbarResponsividad = window.probarResponsividad;
+        window.probarResponsividad = function() {
+            mostrarResultado('📱 Iniciando prueba de responsividad...');
+            originalProbarResponsividad();
+            mostrarResultado('✅ Prueba de responsividad completada');
+        };
+    </script>
+</body>
+</html>

@@ -1334,26 +1334,46 @@ function hideLoading() {
 
 // Mostrar toast
 function showToast(message, type = 'info') {
-    const toast = document.getElementById('toast');
-    const toastMessage = document.createElement('div');
-    toastMessage.className = `toast-message ${type}`;
-    
-    const icon = type === 'success' ? 'fas fa-check-circle' :
-                 type === 'error' ? 'fas fa-exclamation-circle' :
-                 type === 'warning' ? 'fas fa-exclamation-triangle' :
-                 'fas fa-info-circle';
-    
-    toastMessage.innerHTML = `
-        <i class="${icon}"></i>
-        <span>${message}</span>
-    `;
-    
-    toast.appendChild(toastMessage);
-    
-    // Remover después de 5 segundos
-    setTimeout(() => {
-        toastMessage.remove();
-    }, 5000);
+    try {
+        const toast = document.getElementById('toast');
+        if (!toast) {
+            console.error('❌ Elemento toast no encontrado en el DOM');
+            // Crear el elemento toast si no existe
+            const newToast = document.createElement('div');
+            newToast.id = 'toast';
+            newToast.className = 'toast';
+            document.body.appendChild(newToast);
+            console.log('✅ Elemento toast creado dinámicamente');
+        }
+        
+        const toastMessage = document.createElement('div');
+        toastMessage.className = `toast-message ${type}`;
+        
+        const icon = type === 'success' ? 'fas fa-check-circle' :
+                     type === 'error' ? 'fas fa-exclamation-circle' :
+                     type === 'warning' ? 'fas fa-exclamation-triangle' :
+                     'fas fa-info-circle';
+        
+        toastMessage.innerHTML = `
+            <i class="${icon}"></i>
+            <span>${message}</span>
+        `;
+        
+        toast.appendChild(toastMessage);
+        
+        // Remover después de 5 segundos
+        setTimeout(() => {
+            if (toastMessage && toastMessage.parentNode) {
+                toastMessage.remove();
+            }
+        }, 5000);
+        
+        console.log(`✅ Toast mostrado: ${message} (${type})`);
+    } catch (error) {
+        console.error('❌ Error al mostrar toast:', error);
+        // Fallback: alert simple si falla el toast
+        alert(`${type.toUpperCase()}: ${message}`);
+    }
 }
 
 // Cerrar modales al hacer clic fuera
@@ -2085,3 +2105,50 @@ async function verificarCambiosServidor() {
         console.error('❌ Error verificando cambios:', error);
     }
 }
+
+// ==================== FUNCIONES DE PRUEBA ====================
+
+/**
+ * Función para probar las notificaciones del sistema
+ * Útil para verificar que el sistema de toast funcione correctamente
+ */
+function probarNotificaciones() {
+    console.log('🧪 Probando sistema de notificaciones...');
+    
+    // Probar diferentes tipos de notificaciones
+    setTimeout(() => showToast('✅ Notificación de éxito', 'success'), 100);
+    setTimeout(() => showToast('⚠️ Notificación de advertencia', 'warning'), 2000);
+    setTimeout(() => showToast('❌ Notificación de error', 'error'), 4000);
+    setTimeout(() => showToast('ℹ️ Notificación informativa', 'info'), 6000);
+    
+    console.log('✅ Pruebas de notificaciones iniciadas');
+}
+
+/**
+ * Función para probar la responsividad móvil
+ * Útil para verificar que el sistema funcione bien en dispositivos pequeños
+ */
+function probarResponsividad() {
+    console.log('📱 Probando responsividad móvil...');
+    
+    // Simular diferentes tamaños de pantalla
+    const viewports = [
+        { width: 375, height: 667, name: 'iPhone SE' },
+        { width: 414, height: 896, name: 'iPhone 11 Pro Max' },
+        { width: 768, height: 1024, name: 'iPad' },
+        { width: 1920, height: 1080, name: 'Desktop' }
+    ];
+    
+    viewports.forEach((viewport, index) => {
+        setTimeout(() => {
+            console.log(`📱 Probando viewport: ${viewport.name} (${viewport.width}x${viewport.height})`);
+            // Aquí podrías agregar lógica para probar diferentes elementos
+        }, index * 1000);
+    });
+    
+    console.log('✅ Pruebas de responsividad iniciadas');
+}
+
+// Hacer las funciones de prueba disponibles globalmente para testing
+window.probarNotificaciones = probarNotificaciones;
+window.probarResponsividad = probarResponsividad;

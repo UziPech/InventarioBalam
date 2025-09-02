@@ -1491,3 +1491,245 @@ textarea.form-input {
         font-size: 14px;
     }
 }
+
+/* ===== STOCK CRÍTICO ===== */
+.stock-critico-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.producto-stock-critico {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+.producto-stock-critico:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+    border-color: var(--primary);
+}
+
+.producto-stock-critico.agotado {
+    border-color: var(--danger);
+    background: rgba(255, 107, 107, 0.1);
+}
+
+.producto-stock-critico.stock-bajo {
+    border-color: var(--warning);
+    background: rgba(255, 169, 77, 0.1);
+}
+
+.producto-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.producto-info .nombre {
+    font-weight: 600;
+    color: var(--text);
+    font-size: 16px;
+}
+
+.producto-info .estado {
+    font-size: 14px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.producto-stock {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.producto-stock .cantidad {
+    font-weight: 600;
+    color: var(--text);
+    font-size: 16px;
+}
+
+.producto-stock .precio {
+    font-size: 14px;
+    color: var(--primary);
+    font-weight: 500;
+}
+
+/* ===== FILTROS DE HISTORIAL ===== */
+.historial-filtros {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.filtro-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    white-space: nowrap;
+    min-width: fit-content;
+}
+
+.filtro-btn:hover {
+    background: var(--primary);
+    color: var(--bg);
+    border-color: var(--primary);
+}
+
+.filtro-btn.activo {
+    background: var(--primary);
+    color: var(--bg);
+    border-color: var(--primary);
+}
+
+/* ===== TOAST NOTIFICATIONS ===== */
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 400px;
+}
+
+.toast-message {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    color: var(--text);
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    animation: slideInRight 0.3s ease;
+    min-width: 300px;
+}
+
+.toast-message.success {
+    border-left: 4px solid var(--success);
+}
+
+.toast-message.error {
+    border-left: 4px solid var(--danger);
+}
+
+.toast-message.warning {
+    border-left: 4px solid var(--warning);
+}
+
+.toast-message.info {
+    border-left: 4px solid var(--primary);
+}
+
+.toast-message i {
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.toast-message.success i {
+    color: var(--success);
+}
+
+.toast-message.error i {
+    color: var(--danger);
+}
+
+.toast-message.warning i {
+    color: var(--warning);
+}
+
+.toast-message.info i {
+    color: var(--primary);
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* ===== RESPONSIVIDAD MÓVIL MEJORADA ===== */
+@media (max-width: 768px) {
+    .historial-filtros {
+        justify-content: flex-start;
+        overflow-x: auto;
+        padding-bottom: 8px;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .filtro-btn {
+        flex-shrink: 0;
+        font-size: 13px;
+        padding: 6px 12px;
+    }
+    
+    .producto-stock-critico {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .producto-stock {
+        align-items: flex-start;
+        width: 100%;
+    }
+    
+    .toast {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+    }
+    
+    .toast-message {
+        min-width: auto;
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .historial-filtros {
+        gap: 6px;
+    }
+    
+    .filtro-btn {
+        font-size: 12px;
+        padding: 5px 10px;
+    }
+    
+    .producto-stock-critico {
+        padding: 12px;
+    }
+    
+    .producto-info .nombre {
+        font-size: 14px;
+    }
+    
+    .producto-stock .cantidad {
+        font-size: 14px;
+    }
+}
