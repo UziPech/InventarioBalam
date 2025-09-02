@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍔 Test Móvil - Inventario BalamKin</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Estilos adicionales para testing */
+        .test-info {
+            background: rgba(46, 228, 198, 0.1);
+            border: 1px solid var(--primary);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin: 16px 0;
+            color: var(--text);
+        }
+        
+        .test-info h3 {
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        
+        .device-info {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 12px;
+            margin: 8px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <img src="assets/logo/logo_balamkin.png" alt="Inventario Balam" class="logo-img">
+                <h1>Test Móvil</h1>
+            </div>
+            <div class="header-info">
+                <span class="date" id="currentDate"></span>
+                <span class="time" id="currentTime"></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-container">
+            <button class="nav-btn active" data-tab="test">
+                <i class="fas fa-mobile-alt"></i>
+                <span>Test</span>
+            </button>
+            <button class="nav-btn" data-tab="navegacion">
+                <i class="fas fa-compass"></i>
+                <span>Navegación</span>
+            </button>
+            <button class="nav-btn" data-tab="tablas">
+                <i class="fas fa-table"></i>
+                <span>Tablas</span>
+            </button>
+            <button class="nav-btn" data-tab="formularios">
+                <i class="fas fa-edit"></i>
+                <span>Formularios</span>
+            </button>
+            <button class="nav-btn" data-tab="botones">
+                <i class="fas fa-square"></i>
+                <span>Botones</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main">
+        <!-- Test Tab -->
+        <section id="test" class="tab-content active">
+            <div class="section-header">
+                <h2><i class="fas fa-mobile-alt"></i> Test de Responsividad Móvil</h2>
+            </div>
+            
+            <div class="test-info">
+                <h3>📱 Información del Dispositivo</h3>
+                <div class="device-info" id="deviceInfo">
+                    Cargando información del dispositivo...
+                </div>
+                <p>Este es un archivo de prueba para verificar que todos los elementos del sistema funcionen correctamente en dispositivos móviles.</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="screenWidth">0</h3>
+                        <p>Ancho de Pantalla</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-expand-arrows-alt"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="screenHeight">0</h3>
+                        <p>Alto de Pantalla</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-eye"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="pixelRatio">0</h3>
+                        <p>Ratio de Píxeles</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Navegación Tab -->
+        <section id="navegacion" class="tab-content">
+            <div class="section-header">
+                <h2><i class="fas fa-compass"></i> Test de Navegación</h2>
+            </div>
+            
+            <div class="test-info">
+                <h3>🧭 Navegación por Tabs</h3>
+                <p>Prueba navegar entre las diferentes secciones usando los botones de arriba. En móviles, estos botones deberían ser táctiles y permitir scroll horizontal si es necesario.</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-tabs"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>5</h3>
+                        <p>Tabs Disponibles</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-touch"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>Touch</h3>
+                        <p>Navegación Táctil</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-scroll"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>Scroll</h3>
+                        <p>Horizontal</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tablas Tab -->
+        <section id="tablas" class="tab-content">
+            <div class="section-header">
+                <h2><i class="fas fa-table"></i> Test de Tablas Responsivas</h2>
+            </div>
+            
+            <div class="test-info">
+                <h3>📊 Tablas Responsivas</h3>
+                <p>Las tablas deberían permitir scroll horizontal en dispositivos móviles y los botones de acción deberían ser fácilmente accesibles.</p>
+            </div>
+
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th>Unidad</th>
+                            <th>Precio</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>Hamburguesa Tradicional</td>
+                            <td>50</td>
+                            <td>piezas</td>
+                            <td>$25.00</td>
+                            <td>
+                                <span class="status-badge success">Disponible</span>
+                            </td>
+                            <td>
+                                <div class="table-actions">
+                                    <button class="btn btn-secondary btn-small">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-danger btn-small">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>Hamburguesa Hawaiana</td>
+                            <td>30</td>
+                            <td>piezas</td>
+                            <td>$30.00</td>
+                            <td>
+                                <span class="status-badge warning">Stock Bajo</span>
+                            </td>
+                            <td>
+                                <div class="table-actions">
+                                    <button class="btn btn-secondary btn-small">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-danger btn-small">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td>Papas Fritas</td>
+                            <td>100</td>
+                            <td>porciones</td>
+                            <td>$15.00</td>
+                            <td>
+                                <span class="status-badge success">Disponible</span>
+                            </td>
+                            <td>
+                                <div class="table-actions">
+                                    <button class="btn btn-secondary btn-small">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-danger btn-small">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Formularios Tab -->
+        <section id="formularios" class="tab-content">
+            <div class="section-header">
+                <h2><i class="fas fa-edit"></i> Test de Formularios</h2>
+            </div>
+            
+            <div class="test-info">
+                <h3>✏️ Formularios Responsivos</h3>
+                <p>Los formularios deberían adaptarse a pantallas pequeñas y ser fáciles de usar en dispositivos táctiles.</p>
+            </div>
+
+            <div class="pedido-form">
+                <div class="form-group">
+                    <label for="testNombre">Nombre del Producto:</label>
+                    <input type="text" id="testNombre" class="form-input" placeholder="Ej: Hamburguesa Especial">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="testCantidad">Cantidad:</label>
+                        <input type="number" id="testCantidad" class="form-input" placeholder="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="testUnidad">Unidad:</label>
+                        <select id="testUnidad" class="form-input">
+                            <option value="">Seleccionar...</option>
+                            <option value="piezas">Piezas</option>
+                            <option value="kg">Kilogramos</option>
+                            <option value="l">Litros</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="testPrecio">Precio:</label>
+                    <input type="number" id="testPrecio" class="form-input" placeholder="0.00" step="0.01">
+                </div>
+                
+                <div class="form-group">
+                    <label for="testDescripcion">Descripción:</label>
+                    <textarea id="testDescripcion" class="form-input" rows="3" placeholder="Descripción del producto..."></textarea>
+                </div>
+                
+                <div class="modal-footer">
+                    <button class="btn btn-secondary">Cancelar</button>
+                    <button class="btn btn-primary">Guardar</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Botones Tab -->
+        <section id="botones" class="tab-content">
+            <div class="section-header">
+                <h2><i class="fas fa-square"></i> Test de Botones</h2>
+            </div>
+            
+            <div class="test-info">
+                <h3>🔘 Botones Responsivos</h3>
+                <p>Todos los botones deberían ser fáciles de tocar en dispositivos móviles (mínimo 44px de altura recomendado).</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Botones Principales</h3>
+                    <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 16px;">
+                        <button class="btn btn-primary">Botón Primario</button>
+                        <button class="btn btn-secondary">Botón Secundario</button>
+                        <button class="btn btn-success">Botón Éxito</button>
+                        <button class="btn btn-danger">Botón Peligro</button>
+                        <button class="btn btn-warning">Botón Advertencia</button>
+                        <button class="btn btn-info">Botón Info</button>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <h3>Botones Pequeños</h3>
+                    <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 16px;">
+                        <button class="btn btn-primary btn-small">Pequeño Primario</button>
+                        <button class="btn btn-secondary btn-small">Pequeño Secundario</button>
+                        <button class="btn btn-success btn-small">Pequeño Éxito</button>
+                        <button class="btn btn-danger btn-small">Pequeño Peligro</button>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <h3>Botones Grandes</h3>
+                    <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 16px;">
+                        <button class="btn btn-primary btn-large">Botón Grande Primario</button>
+                        <button class="btn btn-secondary btn-large">Botón Grande Secundario</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Función para cambiar tabs
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tab = btn.dataset.tab;
+                switchTab(tab);
+            });
+        });
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(tabName).classList.add('active');
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+        }
+
+        // Función para mostrar información del dispositivo
+        function updateDeviceInfo() {
+            const deviceInfo = document.getElementById('deviceInfo');
+            const screenWidth = document.getElementById('screenWidth');
+            const screenHeight = document.getElementById('screenHeight');
+            const pixelRatio = document.getElementById('pixelRatio');
+            
+            const info = {
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
+                screenWidth: window.screen.width,
+                screenHeight: window.screen.height,
+                innerWidth: window.innerWidth,
+                innerHeight: window.innerHeight,
+                devicePixelRatio: window.devicePixelRatio,
+                orientation: window.screen.orientation ? window.screen.orientation.type : 'unknown',
+                touchSupport: 'ontouchstart' in window ? 'Sí' : 'No',
+                maxTouchPoints: navigator.maxTouchPoints || 'N/A'
+            };
+            
+            deviceInfo.innerHTML = Object.entries(info)
+                .map(([key, value]) => `<strong>${key}:</strong> ${value}`)
+                .join('<br>');
+            
+            screenWidth.textContent = window.innerWidth;
+            screenHeight.textContent = window.innerHeight;
+            pixelRatio.textContent = window.devicePixelRatio;
+        }
+
+        // Actualizar información al cargar y al cambiar tamaño
+        document.addEventListener('DOMContentLoaded', updateDeviceInfo);
+        window.addEventListener('resize', updateDeviceInfo);
+        window.addEventListener('orientationchange', updateDeviceInfo);
+
+        // Actualizar fecha y hora
+        function updateDateTime() {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('es-ES', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            const timeStr = now.toLocaleTimeString('es-ES');
+            
+            document.getElementById('currentDate').textContent = dateStr;
+            document.getElementById('currentTime').textContent = timeStr;
+        }
+
+        updateDateTime();
+        setInterval(updateDateTime, 1000);
+    </script>
+</body>
+</html>

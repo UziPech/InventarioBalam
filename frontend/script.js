@@ -185,12 +185,14 @@ function renderizarInventario() {
                 </span>
             </td>
             <td>
-                <button class="btn btn-secondary btn-small" data-action="editar" data-id="${producto.id}">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button class="btn btn-danger btn-small" data-action="eliminar" data-id="${producto.id}">
-                    <i class="fas fa-trash"></i>
-                </button>
+                <div class="table-actions">
+                    <button class="btn btn-secondary btn-small" data-action="editar" data-id="${producto.id}">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-danger btn-small" data-action="eliminar" data-id="${producto.id}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
             </td>
         `;
         tbody.appendChild(row);
@@ -963,7 +965,7 @@ function renderizarHistorial() {
                 </span>
             </td>
             <td>
-                <div class="btn-group">
+                <div class="table-actions">
                     <button class="btn btn-secondary btn-small" onclick="verPedido(${pedido.id})" title="Ver detalles">
                         <i class="fas fa-eye"></i>
                     </button>
