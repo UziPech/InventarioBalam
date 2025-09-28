@@ -823,6 +823,12 @@ small, .muted {
     border: 1px solid var(--danger);
 }
 
+.status-badge.entregado {
+    background: rgba(46, 228, 198, 0.2);
+    color: var(--primary);
+    border: 1px solid var(--primary);
+}
+
 /* Modals */
 .modal {
     display: none;

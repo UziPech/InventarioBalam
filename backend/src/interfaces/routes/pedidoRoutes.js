@@ -392,6 +392,29 @@ module.exports = (pedidoController) => {
 
     /**
      * @swagger
+     * /api/pedidos/{id}/entregar:
+     *   patch:
+     *     summary: Marcar pedido como entregado
+     *     tags: [Pedidos]
+     *     parameters:
+     *       - in: path
+     *         name: id
+     *         required: true
+     *         schema:
+     *           type: integer
+     *         description: ID del pedido
+     *     responses:
+     *       200:
+     *         description: Pedido marcado como entregado exitosamente
+     *       404:
+     *         description: Pedido no encontrado
+     *       500:
+     *         description: Error interno del servidor
+     */
+    router.patch('/:id/entregar', pedidoController.marcarComoEntregado.bind(pedidoController));
+
+    /**
+     * @swagger
      * /api/pedidos/{id}/cancelar:
      *   patch:
      *     summary: Cancelar pedido

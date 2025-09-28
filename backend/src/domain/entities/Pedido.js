@@ -14,7 +14,7 @@ class Pedido {
             this.fecha = fechaActual;
         }
         
-        this.estado = 'pendiente'; // pendiente, pagado, cancelado
+        this.estado = 'pendiente'; // pendiente, pagado, entregado, cancelado
         
         // Debug: mostrar información de la fecha
         console.log(`📅 Pedido #${id} - Fecha creada (UTC): ${this.fecha.toISOString()}`);
@@ -106,7 +106,7 @@ class Pedido {
     }
 
     actualizarEstado(nuevoEstado) {
-        const estadosValidos = ['pendiente', 'pagado', 'cancelado'];
+        const estadosValidos = ['pendiente', 'pagado', 'entregado', 'cancelado'];
         if (!estadosValidos.includes(nuevoEstado)) {
             throw new Error('Estado no válido');
         }

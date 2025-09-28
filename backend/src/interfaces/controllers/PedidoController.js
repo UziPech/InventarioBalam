@@ -535,6 +535,49 @@ class PedidoController {
     }
 
     /**
+     * Marcar pedido como entregado
+     * @param {Object} req - Request de Express
+     * @param {Object} res - Response de Express
+     */
+    async marcarComoEntregado(req, res) {
+        try {
+            const { id } = req.params;
+            
+            const pedido = await this.pedidoRepository.obtenerPorId(parseInt(id));
+            
+            if (!pedido) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Pedido no encontrado'
+                });
+            }
+
+            // Verificar que el pedido esté en estado 'pagado' antes de entregar
+            if (pedido.estado !== 'pagado') {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Solo se pueden entregar pedidos que estén pagados'
+                });
+            }
+
+            pedido.actualizarEstado('entregado');
+            await this.pedidoRepository.actualizar(parseInt(id), pedido);
+
+            res.json({
+                success: true,
+                data: pedido.toJSON(),
+                message: `Pedido #${pedido.id} marcado como entregado`
+            });
+        } catch (error) {
+            res.status(500).json({
+                success: false,
+                error: error.message,
+                message: 'Error al marcar pedido como entregado'
+            });
+        }
+    }
+
+    /**
      * Cancelar pedido
      * @param {Object} req - Request of Express
      * @param {Object} res - Response of Express

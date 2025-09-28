@@ -1751,6 +1751,11 @@ function renderizarHistorial() {
                             <i class="fas fa-times"></i>
                         </button>
                     ` : ''}
+                    ${estado === 'pagado' ? `
+                        <button class="btn btn-primary btn-small" onclick="marcarComoEntregado(${pedido.id})" title="Marcar como entregado">
+                            <i class="fas fa-truck"></i>
+                        </button>
+                    ` : ''}
                     <button class="btn btn-warning btn-small" onclick="eliminarPedido(${pedido.id})" title="Eliminar pedido">
                         <i class="fas fa-trash"></i>
                     </button>
@@ -2485,6 +2490,55 @@ async function marcarComoPagado(pedidoId) {
     } catch (error) {
         console.error('Error al marcar como pagado:', error);
         showToast(`Error al marcar pedido como pagado: ${error.message}`, 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+// Marcar pedido como entregado
+async function marcarComoEntregado(pedidoId) {
+    try {
+        console.log(`🚚 Marcando pedido #${pedidoId} como entregado...`);
+        showLoading();
+        
+        const response = await apiRequest(`/pedidos/${pedidoId}/entregar`, {
+            method: 'PATCH'
+        });
+        
+        console.log('Respuesta del servidor:', response);
+        
+        if (response.success) {
+            showToast(`✅ Pedido #${pedidoId} marcado como entregado`, 'success');
+            
+            // Forzar recarga completa de datos para evitar inconsistencias
+            console.log('🔄 Recargando todos los datos...');
+            
+            // Limpiar cache local
+            pedidos = [];
+            
+            // Recargar todos los datos en paralelo
+            await Promise.all([
+                cargarInventario(),
+                cargarMenu(),
+                cargarHistorial(),
+                cargarPedidosHoy(),
+                cargarPedidosEstaSemana(),
+                cargarPedidosEsteMes(),
+                cargarPedidosPendientes()
+            ]);
+            
+            // Actualizar UI y re-renderizar historial
+            actualizarEstadisticasHistorial();
+            renderizarHistorial(); // Re-renderizar para mostrar cambios visuales
+            verificarPedidosPendientes();
+            
+            console.log('✅ Datos recargados completamente');
+        } else {
+            throw new Error(response.message || 'Error desconocido');
+        }
+    } catch (error) {
+        console.error('Error al marcar como entregado:', error);
+        showToast(`Error al marcar pedido como entregado: ${error.message}`, 'error');
     } finally {
         hideLoading();
     }
