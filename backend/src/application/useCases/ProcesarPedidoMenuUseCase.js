@@ -72,16 +72,29 @@ class ProcesarPedidoMenuUseCase {
             for (const item of datosPedido.items) {
                 const productoMenu = productosMenu.find(p => p.id === item.productoId);
                 if (productoMenu) {
-                    const subtotal = productoMenu.precio * item.cantidad;
+                    let precioUnitario = productoMenu.precio;
+                    let costoExtras = 0;
                     
-                    console.log(`🍔 Agregando item: ${productoMenu.nombre} x${item.cantidad} = $${subtotal}`);
+                    // Calcular costo de ingredientes extras
+                    if (item.personalizaciones && item.personalizaciones.ingredientesExtras) {
+                        costoExtras = item.personalizaciones.ingredientesExtras.reduce((sum, extra) => {
+                            return sum + (extra.precioUnitario * extra.cantidad);
+                        }, 0);
+                        precioUnitario += costoExtras;
+                    }
+                    
+                    const subtotal = precioUnitario * item.cantidad;
+                    
+                    console.log(`🍔 Agregando item: ${productoMenu.nombre} x${item.cantidad}`);
+                    console.log(`💰 Precio base: $${productoMenu.precio}, Extras: $${costoExtras}, Total unitario: $${precioUnitario}`);
+                    console.log(`💵 Subtotal: $${subtotal}`);
                     console.log(`🎨 Personalizaciones:`, item.personalizaciones);
                     
                     pedido.agregarItem(
                         item.productoId,
                         productoMenu.nombre,
                         item.cantidad,
-                        productoMenu.precio,
+                        precioUnitario, // ✅ Usar precio que incluye extras
                         item.personalizaciones
                     );
                     totalPedido += subtotal;

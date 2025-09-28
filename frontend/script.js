@@ -2486,13 +2486,69 @@ async function verPedido(pedidoId) {
                     </div>
                     <div class="detalle-items">
                         <h4>Items del Pedido:</h4>
-                        <ul>
+                        <div class="items-detallados">
                             ${pedido.items.map(item => {
                                 const nombre = item.nombre || `Producto ID: ${item.productoId}`;
-                                const subtotal = (item.cantidad * item.precio).toFixed(2);
-                                return `<li>${item.cantidad} x ${nombre} - $${item.precio.toFixed(2)} c/u = $${subtotal}</li>`;
+                                let subtotal = (item.cantidad * item.precio).toFixed(2);
+                                
+                                // Información básica del item
+                                let html = `
+                                    <div class="item-detalle">
+                                        <div class="item-principal">
+                                            <strong>${item.cantidad} x ${nombre}</strong>
+                                            <span class="precio-item">$${item.precio.toFixed(2)} c/u = $${subtotal}</span>
+                                        </div>
+                                `;
+                                
+                                // Mostrar personalizaciones si existen
+                                if (item.personalizaciones) {
+                                    const { ingredientesExcluidos, ingredientesExtras } = item.personalizaciones;
+                                    
+                                    if (ingredientesExcluidos && ingredientesExcluidos.length > 0) {
+                                        html += `
+                                            <div class="personalizacion-detalle excluidos">
+                                                <i class="fas fa-minus-circle"></i>
+                                                <strong>Sin:</strong> ${ingredientesExcluidos.map(id => {
+                                                    const producto = productos.find(p => p.id === id);
+                                                    return producto ? producto.nombre : `ID:${id}`;
+                                                }).join(', ')}
+                                            </div>
+                                        `;
+                                    }
+                                    
+                                    if (ingredientesExtras && ingredientesExtras.length > 0) {
+                                        let costoExtrasTotal = 0;
+                                        const extrasTexto = ingredientesExtras.map(extra => {
+                                            const costoExtra = (extra.precioUnitario || 0) * (extra.cantidad || 1);
+                                            costoExtrasTotal += costoExtra;
+                                            return `${extra.nombre} x${extra.cantidad} (+$${costoExtra.toFixed(2)})`;
+                                        }).join(', ');
+                                        
+                                        html += `
+                                            <div class="personalizacion-detalle extras">
+                                                <i class="fas fa-plus-circle"></i>
+                                                <strong>Extras:</strong> ${extrasTexto}
+                                            </div>
+                                        `;
+                                        
+                                        // Recalcular subtotal con extras
+                                        const precioConExtras = item.precio + (costoExtrasTotal / item.cantidad);
+                                        const subtotalConExtras = (precioConExtras * item.cantidad).toFixed(2);
+                                        
+                                        if (costoExtrasTotal > 0) {
+                                            html += `
+                                                <div class="precio-recalculado">
+                                                    <small>Precio con extras: $${precioConExtras.toFixed(2)} c/u = $${subtotalConExtras}</small>
+                                                </div>
+                                            `;
+                                        }
+                                    }
+                                }
+                                
+                                html += `</div>`;
+                                return html;
                             }).join('')}
-                        </ul>
+                        </div>
                     </div>
                 </div>
             `;

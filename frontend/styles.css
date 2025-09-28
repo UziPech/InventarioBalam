@@ -1308,6 +1308,67 @@ small, .muted {
     flex-wrap: wrap;
 }
 
+/* Estilos para detalles del historial */
+.items-detallados {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.item-detalle {
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+}
+
+.item-principal {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.precio-item {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.personalizacion-detalle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.personalizacion-detalle.excluidos {
+    background: rgba(255, 107, 107, 0.1);
+    border-left: 3px solid #ff6b6b;
+    color: #c92a2a;
+}
+
+.personalizacion-detalle.extras {
+    background: rgba(81, 207, 102, 0.1);
+    border-left: 3px solid #51cf66;
+    color: #2b8a3e;
+}
+
+.precio-recalculado {
+    margin-top: 8px;
+    padding: 8px;
+    background: rgba(255, 193, 7, 0.1);
+    border-radius: 4px;
+    border-left: 3px solid var(--warning);
+}
+
+.precio-recalculado small {
+    color: var(--warning);
+    font-weight: 600;
+}
+
 /* Formularios */
 .form-group {
     margin-bottom: 20px;
