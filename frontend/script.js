@@ -814,10 +814,24 @@ function actualizarResumenPedidoMixto() {
         } else if (data.items) {
             // Productos personalizados
             data.items.forEach((item, index) => {
-                const subtotal = producto.precio * item.cantidad;
+                // ✅ CORRECCIÓN: Calcular precio total incluyendo ingredientes extras
+                let precioUnitario = producto.precio;
+                let costoExtras = 0;
+                
+                // Calcular costo de ingredientes extras
+                if (item.personalizaciones && item.personalizaciones.ingredientesExtras) {
+                    costoExtras = item.personalizaciones.ingredientesExtras.reduce((sum, extra) => {
+                        return sum + (extra.precioUnitario * extra.cantidad);
+                    }, 0);
+                    precioUnitario += costoExtras;
+                }
+                
+                const subtotal = precioUnitario * item.cantidad;
                 total += subtotal;
                 
                 let personalizacionTexto = '';
+                let extrasTexto = '';
+                
                 if (item.personalizaciones) {
                     const exclusiones = item.personalizaciones.ingredientesExcluidos;
                     const extras = item.personalizaciones.ingredientesExtras;
@@ -831,9 +845,19 @@ function actualizarResumenPedidoMixto() {
                     }
                     
                     if (extras.length > 0) {
-                        const nombresExtras = extras.map(extra => `${extra.nombre} (${extra.cantidad})`);
-                        personalizacionTexto += `<br><small style="color: #51cf66;">Extra: ${nombresExtras.join(', ')}</small>`;
+                        const nombresExtras = extras.map(extra => {
+                            const costoExtra = extra.precioUnitario * extra.cantidad;
+                            return `${extra.nombre} x${extra.cantidad} (+$${costoExtra.toFixed(2)})`;
+                        });
+                        extrasTexto = `<br><small style="color: #51cf66;">Extra: ${nombresExtras.join(', ')}</small>`;
+                        personalizacionTexto += extrasTexto;
                     }
+                }
+                
+                // Mostrar desglose de precios si hay extras
+                let precioTexto = `$${producto.precio.toFixed(2)}`;
+                if (costoExtras > 0) {
+                    precioTexto += ` + $${costoExtras.toFixed(2)} extras = $${precioUnitario.toFixed(2)}`;
                 }
                 
                 const itemElement = document.createElement('div');
@@ -842,7 +866,7 @@ function actualizarResumenPedidoMixto() {
                     <div>
                         <strong>${producto.nombre}</strong> <span class="badge-personalizado">Personalizado</span>
                         <br>
-                        <small>$${producto.precio.toFixed(2)} x ${item.cantidad}</small>
+                        <small>${precioTexto} x ${item.cantidad}</small>
                         ${personalizacionTexto}
                     </div>
                     <div>$${subtotal.toFixed(2)}</div>
