@@ -906,12 +906,21 @@ let personalizacionActual = {
 let personalizacionTemporal = null; // Para guardar temporalmente
 
 // Abrir modal de personalización
-function abrirPersonalizacion(productoId) {
+async function abrirPersonalizacion(productoId) {
     const producto = productosMenu.find(p => p.id === productoId);
     if (!producto) {
         showToast('❌ Producto no encontrado', 'error');
         return;
     }
+    
+    // Asegurar que el inventario esté cargado para ingredientes extras
+    if (productos.length === 0) {
+        console.log('📦 Cargando inventario para personalización...');
+        await cargarInventario();
+    }
+    
+    console.log(`🎨 Abriendo personalización para: ${producto.nombre}`);
+    console.log(`📦 Inventario disponible: ${productos.length} productos`);
     
     productoPersonalizacionActual = producto;
     personalizacionActual = {
@@ -1025,9 +1034,13 @@ function toggleIngredienteBase(ingredienteId, incluir) {
 function agregarIngredienteExtra() {
     const container = document.getElementById('ingredientesExtrasContainer');
     
-    // Filtrar productos que no están en ingredientes base
-    const ingredientesBaseIds = productoPersonalizacionActual.ingredientes.map(ing => ing.productoId);
-    const productosDisponibles = productos.filter(p => !ingredientesBaseIds.includes(p.id));
+    // Mostrar todos los productos disponibles como ingredientes extras
+    // (incluso si ya son ingredientes base, para permitir porciones adicionales)
+    const productosDisponibles = productos.filter(p => p.cantidad > 0); // Solo productos con stock
+    
+    // Debug: verificar cuántos productos están disponibles
+    console.log(`📦 Ingredientes extras disponibles: ${productosDisponibles.length} de ${productos.length} productos totales`);
+    console.log(`🔍 Productos disponibles:`, productosDisponibles.map(p => `${p.nombre} (Stock: ${p.cantidad})`));
     
     const item = document.createElement('div');
     item.className = 'ingrediente-extra-item';
@@ -1342,12 +1355,23 @@ function cargarPersonalizacionTemporal() {
     personalizacionActual.ingredientesExtras.forEach(extra => {
         agregarIngredienteExtra();
         const ultimoItem = document.querySelector('.ingrediente-extra-item:last-child');
-        const select = ultimoItem.querySelector('.ingrediente-extra-select');
         const cantidadInput = ultimoItem.querySelector('.ingrediente-extra-cantidad');
         
-        select.value = extra.productoId;
+        // Configurar cantidad
         cantidadInput.value = extra.cantidad;
-        actualizarIngredienteExtra(select);
+        
+        // Configurar selección para custom dropdown
+        const customSelect = ultimoItem.querySelector('.custom-select');
+        if (customSelect) {
+            const selectedText = customSelect.querySelector('.selected-text');
+            customSelect.setAttribute('data-value', extra.productoId);
+            customSelect.setAttribute('data-nombre', extra.nombre);
+            customSelect.setAttribute('data-precio', extra.precioUnitario);
+            selectedText.textContent = `${extra.nombre} - $${extra.precioUnitario.toFixed(2)}`;
+        }
+        
+        // Actualizar precios
+        actualizarIngredienteExtraCustom(ultimoItem);
     });
     
     actualizarPrecioPersonalizacion();
@@ -1363,20 +1387,32 @@ function agregarProductoPersonalizado() {
         return;
     }
     
-    // Validar ingredientes extras
+    // Validar ingredientes extras (compatible con dropdown personalizado)
     const extrasContainer = document.getElementById('ingredientesExtrasContainer');
     const extrasItems = extrasContainer.querySelectorAll('.ingrediente-extra-item');
     
     for (let item of extrasItems) {
-        const select = item.querySelector('.ingrediente-extra-select');
+        // Buscar tanto custom-select como select normal para compatibilidad
+        const customSelect = item.querySelector('.custom-select');
+        const normalSelect = item.querySelector('.ingrediente-extra-select');
         const cantidad = item.querySelector('.ingrediente-extra-cantidad');
         
-        if (select.value && (!cantidad.value || parseFloat(cantidad.value) <= 0)) {
+        let tieneSeleccion = false;
+        
+        if (customSelect) {
+            // Para custom select, verificar si tiene data-value
+            tieneSeleccion = customSelect.getAttribute('data-value');
+        } else if (normalSelect) {
+            // Para select normal, verificar value
+            tieneSeleccion = normalSelect.value;
+        }
+        
+        if (tieneSeleccion && (!cantidad.value || parseFloat(cantidad.value) <= 0)) {
             showToast('Todos los ingredientes extras deben tener una cantidad válida', 'warning');
             return;
         }
         
-        if (!select.value && cantidad.value) {
+        if (!tieneSeleccion && cantidad.value && parseFloat(cantidad.value) > 0) {
             showToast('Por favor selecciona un ingrediente para la cantidad especificada', 'warning');
             return;
         }
