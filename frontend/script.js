@@ -451,12 +451,14 @@ function renderizarMenuItems() {
                 <div class="menu-item-description">${producto.descripcion || ''}</div>
             </div>
             <div class="menu-item-actions">
-                <button class="btn btn-primary" onclick="abrirPersonalizacion(${producto.id})">
-                    <i class="fas fa-sliders-h"></i> Personalizar
-                </button>
-                <div class="quantity-display-readonly" id="qty-display-${producto.id}" style="display: none;">
-                    En pedido: <span id="qty-${producto.id}">0</span>
+                <div class="quantity-controls">
+                    <button class="quantity-btn" onclick="cambiarCantidad(${producto.id}, -1)">-</button>
+                    <span class="quantity-display" id="qty-${producto.id}">0</span>
+                    <button class="quantity-btn" onclick="cambiarCantidad(${producto.id}, 1)">+</button>
                 </div>
+                <button class="btn btn-secondary btn-small" onclick="abrirPersonalizacion(${producto.id})" title="Personalizar ingredientes">
+                    <i class="fas fa-sliders-h"></i>
+                </button>
             </div>
         `;
         container.appendChild(item);
@@ -727,21 +729,27 @@ function removerIngrediente(button) {
 
 // ==================== PEDIDOS ====================
 
-// Cambiar cantidad de un producto en el pedido
+// Cambiar cantidad de un producto en el pedido (método simple)
 function cambiarCantidad(productoId, cambio) {
     const display = document.getElementById(`qty-${productoId}`);
     let cantidad = parseInt(display.textContent) || 0;
     cantidad = Math.max(0, cantidad + cambio);
     display.textContent = cantidad;
     
-    // Actualizar pedido actual
+    // Actualizar pedido actual - estructura simple para productos normales
     if (cantidad > 0) {
-        pedidoActual[productoId] = cantidad;
+        // Si no existe estructura compleja, usar la simple
+        if (!pedidoActual[productoId] || typeof pedidoActual[productoId] === 'number') {
+            pedidoActual[productoId] = cantidad;
+        } else {
+            // Si ya tiene personalizaciones, mantener estructura y actualizar cantidad total
+            pedidoActual[productoId].cantidadSimple = cantidad;
+        }
     } else {
         delete pedidoActual[productoId];
     }
     
-    actualizarResumenPedido();
+    actualizarResumenPedidoMixto();
 }
 
 // Actualizar resumen del pedido
@@ -769,6 +777,96 @@ function actualizarResumenPedido() {
                 <div>$${subtotal.toFixed(2)}</div>
             `;
             container.appendChild(item);
+        }
+    });
+    
+    totalElement.textContent = `$${total.toFixed(2)}`;
+}
+
+// Función unificada para actualizar resumen (productos simples + personalizados)
+function actualizarResumenPedidoMixto() {
+    const container = document.getElementById('resumenItems');
+    const totalElement = document.getElementById('pedidoTotal');
+    container.innerHTML = '';
+    
+    let total = 0;
+    
+    Object.entries(pedidoActual).forEach(([productoId, data]) => {
+        const producto = productosMenu.find(p => p.id === parseInt(productoId));
+        if (!producto) return;
+        
+        if (typeof data === 'number') {
+            // Producto simple (sin personalizaciones)
+            const subtotal = producto.precio * data;
+            total += subtotal;
+            
+            const item = document.createElement('div');
+            item.className = 'resumen-item';
+            item.innerHTML = `
+                <div>
+                    <strong>${producto.nombre}</strong>
+                    <br>
+                    <small>$${producto.precio.toFixed(2)} x ${data}</small>
+                </div>
+                <div>$${subtotal.toFixed(2)}</div>
+            `;
+            container.appendChild(item);
+        } else if (data.items) {
+            // Productos personalizados
+            data.items.forEach((item, index) => {
+                const subtotal = producto.precio * item.cantidad;
+                total += subtotal;
+                
+                let personalizacionTexto = '';
+                if (item.personalizaciones) {
+                    const exclusiones = item.personalizaciones.ingredientesExcluidos;
+                    const extras = item.personalizaciones.ingredientesExtras;
+                    
+                    if (exclusiones.length > 0) {
+                        const nombresExcluidos = exclusiones.map(id => {
+                            const prod = productos.find(p => p.id === id);
+                            return prod ? prod.nombre : `ID:${id}`;
+                        });
+                        personalizacionTexto += `<br><small style="color: #ff6b6b;">Sin: ${nombresExcluidos.join(', ')}</small>`;
+                    }
+                    
+                    if (extras.length > 0) {
+                        const nombresExtras = extras.map(extra => `${extra.nombre} (${extra.cantidad})`);
+                        personalizacionTexto += `<br><small style="color: #51cf66;">Extra: ${nombresExtras.join(', ')}</small>`;
+                    }
+                }
+                
+                const itemElement = document.createElement('div');
+                itemElement.className = 'resumen-item personalizado';
+                itemElement.innerHTML = `
+                    <div>
+                        <strong>${producto.nombre}</strong> <span class="badge-personalizado">Personalizado</span>
+                        <br>
+                        <small>$${producto.precio.toFixed(2)} x ${item.cantidad}</small>
+                        ${personalizacionTexto}
+                    </div>
+                    <div>$${subtotal.toFixed(2)}</div>
+                `;
+                container.appendChild(itemElement);
+            });
+            
+            // Agregar productos simples si los hay
+            if (data.cantidadSimple && data.cantidadSimple > 0) {
+                const subtotal = producto.precio * data.cantidadSimple;
+                total += subtotal;
+                
+                const item = document.createElement('div');
+                item.className = 'resumen-item';
+                item.innerHTML = `
+                    <div>
+                        <strong>${producto.nombre}</strong>
+                        <br>
+                        <small>$${producto.precio.toFixed(2)} x ${data.cantidadSimple}</small>
+                    </div>
+                    <div>$${subtotal.toFixed(2)}</div>
+                `;
+                container.appendChild(item);
+            }
         }
     });
     
@@ -953,31 +1051,28 @@ function agregarProductoPersonalizado() {
         }
     };
     
-    // Agregar al pedido actual (necesitamos modificar la estructura del pedido)
-    if (!pedidoActual[productoId]) {
+    // Convertir a estructura compleja si es necesario
+    if (typeof pedidoActual[productoId] === 'number') {
+        const cantidadSimple = pedidoActual[productoId];
         pedidoActual[productoId] = {
-            cantidad: 0,
+            cantidadSimple: cantidadSimple,
+            items: []
+        };
+    } else if (!pedidoActual[productoId]) {
+        pedidoActual[productoId] = {
+            cantidadSimple: 0,
             items: []
         };
     }
     
     // Agregar el item personalizado
-    pedidoActual[productoId].items = pedidoActual[productoId].items || [];
     pedidoActual[productoId].items.push(itemPersonalizado);
-    pedidoActual[productoId].cantidad += cantidad;
     
-    // Actualizar display
-    const qtyDisplay = document.getElementById(`qty-${productoId}`);
-    if (qtyDisplay) {
-        qtyDisplay.textContent = pedidoActual[productoId].cantidad;
-        const displayContainer = document.getElementById(`qty-display-${productoId}`);
-        if (displayContainer) {
-            displayContainer.style.display = 'block';
-        }
-    }
+    // Actualizar display (no cambiar los controles normales)
+    // El display mostrará la cantidad simple, las personalizaciones se ven en el resumen
     
     // Actualizar resumen
-    actualizarResumenPedidoPersonalizado();
+    actualizarResumenPedidoMixto();
     
     // Cerrar modal
     closeModal('personalizarIngredientes');
@@ -1058,21 +1153,35 @@ async function crearPedido() {
         const productoMenu = productosMenu.find(p => p.id === parseInt(productoMenuId));
         console.log(`📦 Procesando producto ID ${productoMenuId}:`, productoMenu, 'Data:', data);
         
-        if (data.items && data.items.length > 0) {
-            // Productos personalizados
-            data.items.forEach(item => {
+        if (typeof data === 'number') {
+            // Producto simple (sin personalización)
+            if (data > 0) {
                 items.push({
-                    productoId: item.productoId,
-                    cantidad: item.cantidad,
-                    personalizaciones: item.personalizaciones
+                    productoId: parseInt(productoMenuId),
+                    cantidad: data
                 });
-            });
-        } else if (typeof data === 'number') {
-            // Productos sin personalización (compatibilidad hacia atrás)
-            items.push({
-                productoId: parseInt(productoMenuId),
-                cantidad: data
-            });
+            }
+        } else if (data && typeof data === 'object') {
+            // Estructura compleja (con posibles personalizaciones)
+            
+            // Agregar cantidad simple si existe
+            if (data.cantidadSimple && data.cantidadSimple > 0) {
+                items.push({
+                    productoId: parseInt(productoMenuId),
+                    cantidad: data.cantidadSimple
+                });
+            }
+            
+            // Agregar productos personalizados si existen
+            if (data.items && data.items.length > 0) {
+                data.items.forEach(item => {
+                    items.push({
+                        productoId: item.productoId,
+                        cantidad: item.cantidad,
+                        personalizaciones: item.personalizaciones
+                    });
+                });
+            }
         }
     });
     
@@ -1105,12 +1214,7 @@ async function crearPedido() {
                 display.textContent = '0';
             });
             
-            // Ocultar displays de cantidad en productos personalizados
-            document.querySelectorAll('.quantity-display-readonly').forEach(display => {
-                display.style.display = 'none';
-            });
-            
-            actualizarResumenPedidoPersonalizado();
+            actualizarResumenPedidoMixto();
             
             // Recargar datos y actualizar estadísticas inmediatamente
             await Promise.all([
