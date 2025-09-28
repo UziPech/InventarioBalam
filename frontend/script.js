@@ -1050,7 +1050,8 @@ function agregarIngredienteExtra() {
                 <label>Cantidad:</label>
                 <input type="number" class="form-input ingrediente-extra-cantidad" 
                        step="0.5" min="0.5" value="1" 
-                       onchange="actualizarIngredienteExtra(this)">
+                       onchange="actualizarIngredienteExtraCustom(this.closest('.ingrediente-extra-item'))"
+                       oninput="actualizarIngredienteExtraCustom(this.closest('.ingrediente-extra-item'))"
             </div>
         </div>
         <div class="extra-precio">
@@ -1063,15 +1064,27 @@ function agregarIngredienteExtra() {
     container.appendChild(item);
 }
 
-// Actualizar ingrediente extra
+// Actualizar ingrediente extra (compatibilidad con select normal y custom)
 function actualizarIngredienteExtra(element) {
     const item = element.closest('.ingrediente-extra-item');
-    const select = item.querySelector('.ingrediente-extra-select');
+    
+    // Buscar si es custom select o select normal
+    const customSelect = item.querySelector('.custom-select');
+    const normalSelect = item.querySelector('.ingrediente-extra-select');
+    
+    if (customSelect) {
+        // Usar la función personalizada para custom select
+        actualizarIngredienteExtraCustom(item);
+        return;
+    }
+    
+    // Lógica original para select normal (fallback)
+    const select = normalSelect;
     const cantidadInput = item.querySelector('.ingrediente-extra-cantidad');
     const precioSpan = item.querySelector('.precio-extra');
     
     // Actualizar precio del item actual
-    if (select.value && cantidadInput.value) {
+    if (select && select.value && cantidadInput.value) {
         const option = select.options[select.selectedIndex];
         const precioUnitario = parseFloat(option.getAttribute('data-precio')) || 0;
         const cantidad = parseFloat(cantidadInput.value) || 0;
@@ -1091,7 +1104,7 @@ function actualizarIngredienteExtra(element) {
         const selectElement = itemElement.querySelector('.ingrediente-extra-select');
         const cantidadElement = itemElement.querySelector('.ingrediente-extra-cantidad');
         
-        if (selectElement.value && cantidadElement.value && parseFloat(cantidadElement.value) > 0) {
+        if (selectElement && selectElement.value && cantidadElement.value && parseFloat(cantidadElement.value) > 0) {
             const option = selectElement.options[selectElement.selectedIndex];
             personalizacionActual.ingredientesExtras.push({
                 productoId: parseInt(selectElement.value),
@@ -1104,6 +1117,7 @@ function actualizarIngredienteExtra(element) {
     
     actualizarPrecioPersonalizacion();
     actualizarPrevisualizacion();
+    actualizarResumenPedidoMixto();
 }
 
 // Remover ingrediente extra
@@ -1196,6 +1210,9 @@ function actualizarIngredienteExtraCustom(item) {
     
     actualizarPrecioPersonalizacion();
     actualizarPrevisualizacion();
+    
+    // ✅ CORRECCIÓN: Actualizar el resumen general del pedido
+    actualizarResumenPedidoMixto();
 }
 
 // Cambiar cantidad en personalización
