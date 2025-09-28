@@ -2252,3 +2252,111 @@ textarea.form-input {
         font-size: 14px;
     }
 }
+
+/* ===== DROPDOWN PERSONALIZADO PARA INGREDIENTES EXTRAS ===== */
+.custom-select-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.custom-select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--text);
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.custom-select:hover {
+    border-color: var(--primary);
+    background: var(--surface-2);
+}
+
+.custom-select .selected-text {
+    flex-grow: 1;
+    color: var(--text);
+}
+
+.custom-select .dropdown-arrow {
+    color: var(--muted);
+    transition: transform 0.2s ease;
+}
+
+.custom-select:hover .dropdown-arrow {
+    color: var(--primary);
+}
+
+.custom-options {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+    box-shadow: var(--shadow);
+}
+
+.custom-options.open {
+    display: block;
+}
+
+.custom-option {
+    padding: 10px 12px;
+    cursor: pointer;
+    color: var(--text);
+    font-size: 14px;
+    border-bottom: 1px solid var(--border);
+    transition: background-color 0.15s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.custom-option:last-child {
+    border-bottom: none;
+}
+
+.custom-option:hover {
+    background: var(--primary);
+    color: var(--bg);
+}
+
+.custom-option .precio-option {
+    font-size: 12px;
+    color: var(--warning);
+    font-weight: 500;
+}
+
+.custom-option:hover .precio-option {
+    color: var(--bg);
+}
+
+/* Scrollbar personalizado para dropdown */
+.custom-options::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-options::-webkit-scrollbar-track {
+    background: var(--surface-2);
+}
+
+.custom-options::-webkit-scrollbar-thumb {
+    background: var(--muted);
+    border-radius: 3px;
+}
+
+.custom-options::-webkit-scrollbar-thumb:hover {
+    background: var(--primary);
+}

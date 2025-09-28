@@ -2678,17 +2678,8 @@ async function verPedido(pedidoId) {
                                             </div>
                                         `;
                                         
-                                        // Recalcular subtotal con extras
-                                        const precioConExtras = item.precio + (costoExtrasTotal / item.cantidad);
-                                        const subtotalConExtras = (precioConExtras * item.cantidad).toFixed(2);
-                                        
-                                        if (costoExtrasTotal > 0) {
-                                            html += `
-                                                <div class="precio-recalculado">
-                                                    <small>Precio con extras: $${precioConExtras.toFixed(2)} c/u = $${subtotalConExtras}</small>
-                                                </div>
-                                            `;
-                                        }
+                                        // El precio mostrado ya incluye los extras (calculado en backend)
+                                        // No necesitamos mostrar "precio con extras" por separado
                                     }
                                 }
                                 
