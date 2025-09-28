@@ -915,6 +915,132 @@ small, .muted {
     justify-content: flex-end;
 }
 
+/* Estilos para Personalización de Ingredientes */
+.personalizacion-container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.personalizacion-section {
+    padding: 20px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+}
+
+.personalizacion-section h4 {
+    margin: 0 0 12px 0;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.help-text {
+    margin: 0 0 16px 0;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.ingredientes-base-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.ingrediente-base-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--background);
+}
+
+.ingrediente-base-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+}
+
+.ingrediente-base-info {
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ingrediente-name {
+    font-weight: 500;
+    color: var(--text);
+}
+
+.ingrediente-cantidad {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.ingredientes-extras-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.ingrediente-extra-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--background);
+}
+
+.ingrediente-extra-item select,
+.ingrediente-extra-item input {
+    flex: 1;
+    min-width: 0;
+}
+
+.quantity-controls-large {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.quantity-btn-large {
+    width: 50px;
+    height: 50px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.quantity-btn-large:hover {
+    background: var(--primary-hover);
+    transform: scale(1.05);
+}
+
+.quantity-display-large {
+    font-size: 32px;
+    font-weight: bold;
+    color: var(--text);
+    min-width: 60px;
+    text-align: center;
+}
+
 /* Formularios */
 .form-group {
     margin-bottom: 20px;

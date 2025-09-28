@@ -448,11 +448,15 @@ function renderizarMenuItems() {
             <div class="menu-item-info">
                 <div class="menu-item-name">${producto.nombre}</div>
                 <div class="menu-item-price">$${producto.precio.toFixed(2)}</div>
+                <div class="menu-item-description">${producto.descripcion || ''}</div>
             </div>
-            <div class="quantity-controls">
-                <button class="quantity-btn" onclick="cambiarCantidad(${producto.id}, -1)">-</button>
-                <span class="quantity-display" id="qty-${producto.id}">0</span>
-                <button class="quantity-btn" onclick="cambiarCantidad(${producto.id}, 1)">+</button>
+            <div class="menu-item-actions">
+                <button class="btn btn-primary" onclick="abrirPersonalizacion(${producto.id})">
+                    <i class="fas fa-sliders-h"></i> Personalizar
+                </button>
+                <div class="quantity-display-readonly" id="qty-display-${producto.id}" style="display: none;">
+                    En pedido: <span id="qty-${producto.id}">0</span>
+                </div>
             </div>
         `;
         container.appendChild(item);
@@ -771,6 +775,270 @@ function actualizarResumenPedido() {
     totalElement.textContent = `$${total.toFixed(2)}`;
 }
 
+// Variables para personalización
+let productoPersonalizacionActual = null;
+let personalizacionActual = {
+    ingredientesExcluidos: [],
+    ingredientesExtras: []
+};
+
+// Abrir modal de personalización
+function abrirPersonalizacion(productoId) {
+    const producto = productosMenu.find(p => p.id === productoId);
+    if (!producto) return;
+    
+    productoPersonalizacionActual = producto;
+    personalizacionActual = {
+        ingredientesExcluidos: [],
+        ingredientesExtras: []
+    };
+    
+    // Actualizar título del modal
+    document.getElementById('nombreProductoPersonalizar').textContent = producto.nombre;
+    
+    // Cargar ingredientes base
+    cargarIngredientesBase(producto);
+    
+    // Limpiar ingredientes extras
+    document.getElementById('ingredientesExtrasContainer').innerHTML = '';
+    
+    // Resetear cantidad
+    document.getElementById('cantidadPersonalizacion').textContent = '1';
+    
+    // Abrir modal
+    openModal('personalizarIngredientes');
+}
+
+// Cargar ingredientes base del producto
+async function cargarIngredientesBase(producto) {
+    const container = document.getElementById('ingredientesBaseContainer');
+    container.innerHTML = '';
+    
+    if (!producto.ingredientes || producto.ingredientes.length === 0) {
+        container.innerHTML = '<p class="help-text">Este producto no tiene ingredientes configurados.</p>';
+        return;
+    }
+    
+    for (const ingrediente of producto.ingredientes) {
+        const productoInventario = productos.find(p => p.id === ingrediente.productoId);
+        const nombreIngrediente = productoInventario ? productoInventario.nombre : `Ingrediente ID: ${ingrediente.productoId}`;
+        
+        const item = document.createElement('div');
+        item.className = 'ingrediente-base-item';
+        item.innerHTML = `
+            <input type="checkbox" 
+                   id="ingrediente-${ingrediente.productoId}" 
+                   checked 
+                   onchange="toggleIngredienteBase(${ingrediente.productoId}, this.checked)">
+            <div class="ingrediente-base-info">
+                <span class="ingrediente-name">${nombreIngrediente}</span>
+                <span class="ingrediente-cantidad">${ingrediente.cantidad} ${productoInventario?.unidad || 'unidades'}</span>
+            </div>
+        `;
+        container.appendChild(item);
+    }
+}
+
+// Toggle ingrediente base (incluir/excluir)
+function toggleIngredienteBase(ingredienteId, incluir) {
+    if (incluir) {
+        // Remover de excluidos
+        personalizacionActual.ingredientesExcluidos = personalizacionActual.ingredientesExcluidos.filter(id => id !== ingredienteId);
+    } else {
+        // Agregar a excluidos
+        if (!personalizacionActual.ingredientesExcluidos.includes(ingredienteId)) {
+            personalizacionActual.ingredientesExcluidos.push(ingredienteId);
+        }
+    }
+    
+    console.log('Ingredientes excluidos:', personalizacionActual.ingredientesExcluidos);
+}
+
+// Agregar ingrediente extra
+function agregarIngredienteExtra() {
+    const container = document.getElementById('ingredientesExtrasContainer');
+    
+    const item = document.createElement('div');
+    item.className = 'ingrediente-extra-item';
+    item.innerHTML = `
+        <select class="form-input ingrediente-extra-select" onchange="actualizarIngredienteExtra(this)">
+            <option value="">Seleccionar ingrediente...</option>
+            ${productos.map(p => `<option value="${p.id}" data-nombre="${p.nombre}">${p.nombre} (${p.unidad || 'unidades'})</option>`).join('')}
+        </select>
+        <input type="number" class="form-input ingrediente-extra-cantidad" 
+               step="0.01" min="0.01" value="1" placeholder="Cantidad"
+               onchange="actualizarIngredienteExtra(this)">
+        <button type="button" class="btn btn-danger btn-small" onclick="removerIngredienteExtra(this)">
+            <i class="fas fa-trash"></i>
+        </button>
+    `;
+    container.appendChild(item);
+}
+
+// Actualizar ingrediente extra
+function actualizarIngredienteExtra(element) {
+    // Actualizar la lista de ingredientes extras
+    const container = document.getElementById('ingredientesExtrasContainer');
+    const items = container.querySelectorAll('.ingrediente-extra-item');
+    
+    personalizacionActual.ingredientesExtras = [];
+    
+    items.forEach(item => {
+        const select = item.querySelector('.ingrediente-extra-select');
+        const cantidadInput = item.querySelector('.ingrediente-extra-cantidad');
+        
+        if (select.value && cantidadInput.value && parseFloat(cantidadInput.value) > 0) {
+            const option = select.options[select.selectedIndex];
+            personalizacionActual.ingredientesExtras.push({
+                productoId: parseInt(select.value),
+                nombre: option.getAttribute('data-nombre'),
+                cantidad: parseFloat(cantidadInput.value)
+            });
+        }
+    });
+    
+    console.log('Ingredientes extras:', personalizacionActual.ingredientesExtras);
+}
+
+// Remover ingrediente extra
+function removerIngredienteExtra(button) {
+    button.parentElement.remove();
+    actualizarIngredienteExtra();
+}
+
+// Cambiar cantidad en personalización
+function cambiarCantidadPersonalizacion(cambio) {
+    const display = document.getElementById('cantidadPersonalizacion');
+    let cantidad = parseInt(display.textContent) || 1;
+    cantidad = Math.max(1, cantidad + cambio);
+    display.textContent = cantidad;
+}
+
+// Agregar producto personalizado al pedido
+function agregarProductoPersonalizado() {
+    if (!productoPersonalizacionActual) {
+        showToast('Error: No se ha seleccionado un producto', 'error');
+        return;
+    }
+    
+    // Validar ingredientes extras
+    const extrasContainer = document.getElementById('ingredientesExtrasContainer');
+    const extrasItems = extrasContainer.querySelectorAll('.ingrediente-extra-item');
+    
+    for (let item of extrasItems) {
+        const select = item.querySelector('.ingrediente-extra-select');
+        const cantidad = item.querySelector('.ingrediente-extra-cantidad');
+        
+        if (select.value && (!cantidad.value || parseFloat(cantidad.value) <= 0)) {
+            showToast('Todos los ingredientes extras deben tener una cantidad válida', 'warning');
+            return;
+        }
+        
+        if (!select.value && cantidad.value) {
+            showToast('Por favor selecciona un ingrediente para la cantidad especificada', 'warning');
+            return;
+        }
+    }
+    
+    const cantidad = parseInt(document.getElementById('cantidadPersonalizacion').textContent) || 1;
+    const productoId = productoPersonalizacionActual.id;
+    
+    // Crear objeto con personalizaciones
+    const itemPersonalizado = {
+        productoId: productoId,
+        cantidad: cantidad,
+        personalizaciones: {
+            ingredientesExcluidos: [...personalizacionActual.ingredientesExcluidos],
+            ingredientesExtras: [...personalizacionActual.ingredientesExtras]
+        }
+    };
+    
+    // Agregar al pedido actual (necesitamos modificar la estructura del pedido)
+    if (!pedidoActual[productoId]) {
+        pedidoActual[productoId] = {
+            cantidad: 0,
+            items: []
+        };
+    }
+    
+    // Agregar el item personalizado
+    pedidoActual[productoId].items = pedidoActual[productoId].items || [];
+    pedidoActual[productoId].items.push(itemPersonalizado);
+    pedidoActual[productoId].cantidad += cantidad;
+    
+    // Actualizar display
+    const qtyDisplay = document.getElementById(`qty-${productoId}`);
+    if (qtyDisplay) {
+        qtyDisplay.textContent = pedidoActual[productoId].cantidad;
+        const displayContainer = document.getElementById(`qty-display-${productoId}`);
+        if (displayContainer) {
+            displayContainer.style.display = 'block';
+        }
+    }
+    
+    // Actualizar resumen
+    actualizarResumenPedidoPersonalizado();
+    
+    // Cerrar modal
+    closeModal('personalizarIngredientes');
+    
+    showToast(`${productoPersonalizacionActual.nombre} agregado al pedido (${cantidad}x)`, 'success');
+}
+
+// Actualizar resumen con personalizaciones
+function actualizarResumenPedidoPersonalizado() {
+    const container = document.getElementById('resumenItems');
+    const totalElement = document.getElementById('pedidoTotal');
+    container.innerHTML = '';
+    
+    let total = 0;
+    
+    Object.entries(pedidoActual).forEach(([productoId, data]) => {
+        const producto = productosMenu.find(p => p.id === parseInt(productoId));
+        if (producto && data.items) {
+            data.items.forEach((item, index) => {
+                const subtotal = producto.precio * item.cantidad;
+                total += subtotal;
+                
+                // Crear descripción de personalizaciones
+                let personalizacionTexto = '';
+                if (item.personalizaciones) {
+                    const exclusiones = item.personalizaciones.ingredientesExcluidos;
+                    const extras = item.personalizaciones.ingredientesExtras;
+                    
+                    if (exclusiones.length > 0) {
+                        const nombresExcluidos = exclusiones.map(id => {
+                            const prod = productos.find(p => p.id === id);
+                            return prod ? prod.nombre : `ID:${id}`;
+                        });
+                        personalizacionTexto += `<br><small style="color: #ff6b6b;">Sin: ${nombresExcluidos.join(', ')}</small>`;
+                    }
+                    
+                    if (extras.length > 0) {
+                        const nombresExtras = extras.map(extra => `${extra.nombre} (${extra.cantidad})`);
+                        personalizacionTexto += `<br><small style="color: #51cf66;">Extra: ${nombresExtras.join(', ')}</small>`;
+                    }
+                }
+                
+                const itemElement = document.createElement('div');
+                itemElement.className = 'resumen-item';
+                itemElement.innerHTML = `
+                    <div>
+                        <strong>${producto.nombre}</strong>
+                        <br>
+                        <small>$${producto.precio.toFixed(2)} x ${item.cantidad}</small>
+                        ${personalizacionTexto}
+                    </div>
+                    <div>$${subtotal.toFixed(2)}</div>
+                `;
+                container.appendChild(itemElement);
+            });
+        }
+    });
+    
+    totalElement.textContent = `$${total.toFixed(2)}`;
+}
+
 // Crear pedido
 async function crearPedido() {
     const cliente = document.getElementById('clientePedido').value || 'Cliente General';
@@ -784,14 +1052,28 @@ async function crearPedido() {
     console.log('🍔 Productos del menú disponibles:', productosMenu);
     console.log('🛒 Pedido actual:', pedidoActual);
     
-    const items = Object.entries(pedidoActual).map(([productoMenuId, cantidad]) => {
+    const items = [];
+    
+    Object.entries(pedidoActual).forEach(([productoMenuId, data]) => {
         const productoMenu = productosMenu.find(p => p.id === parseInt(productoMenuId));
-        console.log(`📦 Procesando producto ID ${productoMenuId}:`, productoMenu);
+        console.log(`📦 Procesando producto ID ${productoMenuId}:`, productoMenu, 'Data:', data);
         
-        return {
-            productoId: parseInt(productoMenuId),
-            cantidad: cantidad
-        };
+        if (data.items && data.items.length > 0) {
+            // Productos personalizados
+            data.items.forEach(item => {
+                items.push({
+                    productoId: item.productoId,
+                    cantidad: item.cantidad,
+                    personalizaciones: item.personalizaciones
+                });
+            });
+        } else if (typeof data === 'number') {
+            // Productos sin personalización (compatibilidad hacia atrás)
+            items.push({
+                productoId: parseInt(productoMenuId),
+                cantidad: data
+            });
+        }
     });
     
     showLoading();
@@ -817,10 +1099,18 @@ async function crearPedido() {
             // Limpiar pedido actual
             pedidoActual = {};
             document.getElementById('clientePedido').value = '';
+            
+            // Limpiar displays de cantidad
             document.querySelectorAll('.quantity-display').forEach(display => {
                 display.textContent = '0';
             });
-            actualizarResumenPedido();
+            
+            // Ocultar displays de cantidad en productos personalizados
+            document.querySelectorAll('.quantity-display-readonly').forEach(display => {
+                display.style.display = 'none';
+            });
+            
+            actualizarResumenPedidoPersonalizado();
             
             // Recargar datos y actualizar estadísticas inmediatamente
             await Promise.all([

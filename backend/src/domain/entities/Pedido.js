@@ -22,13 +22,17 @@ class Pedido {
     }
 
     // Métodos de negocio
-    agregarItem(productoId, nombre, cantidad, precio) {
+    agregarItem(productoId, nombre, cantidad, precio, personalizaciones = null) {
         const item = {
             productoId,
             nombre,
             cantidad,
             precio,
-            subtotal: cantidad * precio
+            subtotal: cantidad * precio,
+            personalizaciones: personalizaciones || {
+                ingredientesExcluidos: [], // IDs de ingredientes que NO quiere el cliente
+                ingredientesExtras: []      // [{productoId, cantidad, nombre}] ingredientes adicionales
+            }
         };
         
         this.items.push(item);
@@ -51,6 +55,54 @@ class Pedido {
 
     obtenerItems() {
         return [...this.items]; // Retorna una copia para evitar modificaciones externas
+    }
+
+    // Métodos para manejar personalizaciones
+    obtenerIngredientesExtrasDelPedido() {
+        const extrasConsolidados = [];
+        
+        this.items.forEach(item => {
+            if (item.personalizaciones && item.personalizaciones.ingredientesExtras) {
+                item.personalizaciones.ingredientesExtras.forEach(extra => {
+                    const cantidadTotal = extra.cantidad * item.cantidad;
+                    const existente = extrasConsolidados.find(e => e.productoId === extra.productoId);
+                    
+                    if (existente) {
+                        existente.cantidad += cantidadTotal;
+                    } else {
+                        extrasConsolidados.push({
+                            productoId: extra.productoId,
+                            nombre: extra.nombre,
+                            cantidad: cantidadTotal
+                        });
+                    }
+                });
+            }
+        });
+        
+        return extrasConsolidados;
+    }
+
+    obtenerIngredientesExcluidosDelPedido() {
+        const exclusionesConsolidadas = [];
+        
+        this.items.forEach(item => {
+            if (item.personalizaciones && item.personalizaciones.ingredientesExcluidos) {
+                item.personalizaciones.ingredientesExcluidos.forEach(excludedId => {
+                    const existente = exclusionesConsolidadas.find(e => e.productoId === excludedId);
+                    if (!existente) {
+                        exclusionesConsolidadas.push({
+                            productoId: excludedId,
+                            itemsAfectados: [item.productoId]
+                        });
+                    } else if (!existente.itemsAfectados.includes(item.productoId)) {
+                        existente.itemsAfectados.push(item.productoId);
+                    }
+                });
+            }
+        });
+        
+        return exclusionesConsolidadas;
     }
 
     actualizarEstado(nuevoEstado) {

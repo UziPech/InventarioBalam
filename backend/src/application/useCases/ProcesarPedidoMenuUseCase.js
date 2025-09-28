@@ -75,12 +75,14 @@ class ProcesarPedidoMenuUseCase {
                     const subtotal = productoMenu.precio * item.cantidad;
                     
                     console.log(`🍔 Agregando item: ${productoMenu.nombre} x${item.cantidad} = $${subtotal}`);
+                    console.log(`🎨 Personalizaciones:`, item.personalizaciones);
                     
                     pedido.agregarItem(
                         item.productoId,
                         productoMenu.nombre,
                         item.cantidad,
-                        productoMenu.precio
+                        productoMenu.precio,
+                        item.personalizaciones
                     );
                     totalPedido += subtotal;
                 } else {
@@ -145,6 +147,30 @@ class ProcesarPedidoMenuUseCase {
             if (item.cantidad === undefined || item.cantidad <= 0) {
                 throw new Error(`El item ${index + 1} debe tener una cantidad mayor a 0`);
             }
+            
+            // Validar personalizaciones si existen
+            if (item.personalizaciones) {
+                // Validar ingredientes excluidos
+                if (item.personalizaciones.ingredientesExcluidos && 
+                    !Array.isArray(item.personalizaciones.ingredientesExcluidos)) {
+                    throw new Error(`Los ingredientes excluidos del item ${index + 1} deben ser un array`);
+                }
+                
+                // Validar ingredientes extras
+                if (item.personalizaciones.ingredientesExtras && 
+                    !Array.isArray(item.personalizaciones.ingredientesExtras)) {
+                    throw new Error(`Los ingredientes extras del item ${index + 1} deben ser un array`);
+                }
+                
+                // Validar cada ingrediente extra
+                if (item.personalizaciones.ingredientesExtras) {
+                    item.personalizaciones.ingredientesExtras.forEach((extra, extraIndex) => {
+                        if (!extra.productoId || extra.cantidad === undefined || extra.cantidad <= 0) {
+                            throw new Error(`Ingrediente extra ${extraIndex + 1} del item ${index + 1} debe tener productoId y cantidad válidos`);
+                        }
+                    });
+                }
+            }
         });
 
         // Validar cliente (opcional, pero si se proporciona debe ser string)
@@ -190,6 +216,16 @@ class ProcesarPedidoMenuUseCase {
             for (const ingrediente of productoMenu.ingredientes) {
                 console.log(`🔍 Verificando ingrediente:`, ingrediente);
                 
+                // Verificar si este ingrediente está excluido en las personalizaciones
+                const isExcluido = item.personalizaciones && 
+                    item.personalizaciones.ingredientesExcluidos &&
+                    item.personalizaciones.ingredientesExcluidos.includes(ingrediente.productoId);
+                    
+                if (isExcluido) {
+                    console.log(`🚫 Ingrediente excluido por el cliente: ${ingrediente.productoId}`);
+                    continue; // Saltar ingredientes excluidos - no verificar stock ni descontar
+                }
+                
                 const productoInventario = productosInventario.find(p => p.id === ingrediente.productoId);
                 const cantidadNecesaria = ingrediente.cantidad * item.cantidad;
 
@@ -225,6 +261,44 @@ class ProcesarPedidoMenuUseCase {
                     });
                 }
             }
+
+            // Verificar ingredientes extras
+            if (item.personalizaciones && item.personalizaciones.ingredientesExtras) {
+                console.log(`🍕 Verificando ingredientes extras:`, item.personalizaciones.ingredientesExtras);
+                
+                for (const extra of item.personalizaciones.ingredientesExtras) {
+                    const productoInventario = productosInventario.find(p => p.id === extra.productoId);
+                    const cantidadNecesaria = extra.cantidad * item.cantidad;
+                    
+                    console.log(`🔍 Verificando extra:`, extra, `Cantidad necesaria: ${cantidadNecesaria}`);
+                    
+                    if (!productoInventario) {
+                        console.log(`❌ Ingrediente extra no encontrado en inventario: ID ${extra.productoId}`);
+                        ingredientesFaltantes.push({
+                            productoId: extra.productoId,
+                            nombre: extra.nombre || 'Ingrediente extra no encontrado',
+                            cantidadNecesaria,
+                            cantidadDisponible: 0
+                        });
+                    } else if (productoInventario.cantidad < cantidadNecesaria) {
+                        console.log(`❌ Stock insuficiente para extra: ${productoInventario.nombre} - Necesario: ${cantidadNecesaria}, Disponible: ${productoInventario.cantidad}`);
+                        ingredientesFaltantes.push({
+                            productoId: extra.productoId,
+                            nombre: `${productoInventario.nombre} (extra)`,
+                            cantidadNecesaria,
+                            cantidadDisponible: productoInventario.cantidad
+                        });
+                    } else {
+                        console.log(`✅ Stock suficiente para extra: ${productoInventario.nombre} - Necesario: ${cantidadNecesaria}, Disponible: ${productoInventario.cantidad}`);
+                        ingredientesSuficientes.push({
+                            productoId: extra.productoId,
+                            nombre: `${productoInventario.nombre} (extra)`,
+                            cantidadNecesaria,
+                            cantidadDisponible: productoInventario.cantidad
+                        });
+                    }
+                }
+            }
         }
 
         console.log('📊 Resultado de verificación:');
@@ -248,12 +322,37 @@ class ProcesarPedidoMenuUseCase {
         for (const item of items) {
             const productoMenu = productosMenu.find(p => p.id === item.productoId);
             if (productoMenu) {
+                // Actualizar stock de ingredientes base (excluyendo los que no quiere el cliente)
                 for (const ingrediente of productoMenu.ingredientes) {
+                    // Verificar si este ingrediente está excluido
+                    const isExcluido = item.personalizaciones && 
+                        item.personalizaciones.ingredientesExcluidos &&
+                        item.personalizaciones.ingredientesExcluidos.includes(ingrediente.productoId);
+                        
+                    if (isExcluido) {
+                        console.log(`🚫 No descontando ingrediente excluido: ${ingrediente.productoId}`);
+                        continue; // No descontar ingredientes excluidos
+                    }
+
                     const productoInventario = productosInventario.find(p => p.id === ingrediente.productoId);
                     if (productoInventario) {
                         const cantidadARestar = ingrediente.cantidad * item.cantidad;
+                        console.log(`📦 Descontando ingrediente base: ${productoInventario.nombre} - ${cantidadARestar}`);
                         productoInventario.reducirStock(cantidadARestar);
                         await this.productoRepository.actualizar(ingrediente.productoId, productoInventario);
+                    }
+                }
+
+                // Actualizar stock de ingredientes extras
+                if (item.personalizaciones && item.personalizaciones.ingredientesExtras) {
+                    for (const extra of item.personalizaciones.ingredientesExtras) {
+                        const productoInventario = productosInventario.find(p => p.id === extra.productoId);
+                        if (productoInventario) {
+                            const cantidadARestar = extra.cantidad * item.cantidad;
+                            console.log(`🍕 Descontando ingrediente extra: ${productoInventario.nombre} - ${cantidadARestar}`);
+                            productoInventario.reducirStock(cantidadARestar);
+                            await this.productoRepository.actualizar(extra.productoId, productoInventario);
+                        }
                     }
                 }
             }
