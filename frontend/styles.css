@@ -1231,6 +1231,36 @@ small, .muted {
     gap: 8px;
 }
 
+.ingrediente-extra-select {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+/* Estilos específicos para el select de ingredientes extras */
+.ingrediente-extra-select option {
+    padding: 8px 12px;
+    line-height: 1.4;
+}
+
+/* Para navegadores webkit */
+.ingrediente-extra-select::-webkit-scrollbar {
+    width: 8px;
+}
+
+.ingrediente-extra-select::-webkit-scrollbar-track {
+    background: var(--surface);
+    border-radius: 4px;
+}
+
+.ingrediente-extra-select::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+}
+
+.ingrediente-extra-select::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}
+
 .extra-cantidad-container {
     display: flex;
     align-items: center;

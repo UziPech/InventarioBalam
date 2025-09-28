@@ -1033,10 +1033,19 @@ function agregarIngredienteExtra() {
     item.className = 'ingrediente-extra-item';
     item.innerHTML = `
         <div class="extra-select-container">
-            <select class="form-input ingrediente-extra-select" onchange="actualizarIngredienteExtra(this)">
-                <option value="">Seleccionar ingrediente extra...</option>
-                ${productosDisponibles.map(p => `<option value="${p.id}" data-nombre="${p.nombre}" data-precio="${p.precio}">${p.nombre} (+$${p.precio.toFixed(2)})</option>`).join('')}
-            </select>
+            <div class="custom-select-wrapper">
+                <div class="custom-select" onclick="toggleCustomSelect(this)">
+                    <span class="selected-text">Seleccionar ingrediente extra...</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="custom-options">
+                    ${productosDisponibles.map(p => `
+                        <div class="custom-option" data-value="${p.id}" data-nombre="${p.nombre}" data-precio="${p.precio}" onclick="selectCustomOption(this)">
+                            ${p.nombre} <span class="precio-option">(+$${p.precio.toFixed(2)})</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
             <div class="extra-cantidad-container">
                 <label>Cantidad:</label>
                 <input type="number" class="form-input ingrediente-extra-cantidad" 
@@ -1102,6 +1111,91 @@ function removerIngredienteExtra(button) {
     button.parentElement.remove();
     // Simular actualización para recalcular precios
     actualizarIngredienteExtra(document.createElement('div'));
+}
+
+// Funciones para dropdown personalizado
+function toggleCustomSelect(selectElement) {
+    const optionsDiv = selectElement.nextElementSibling;
+    const isOpen = optionsDiv.classList.contains('open');
+    
+    // Cerrar otros dropdowns abiertos
+    document.querySelectorAll('.custom-options.open').forEach(el => {
+        el.classList.remove('open');
+    });
+    
+    // Toggle current dropdown
+    if (!isOpen) {
+        optionsDiv.classList.add('open');
+    }
+}
+
+function selectCustomOption(optionElement) {
+    const customSelect = optionElement.closest('.custom-select-wrapper').querySelector('.custom-select');
+    const selectedText = customSelect.querySelector('.selected-text');
+    const optionsDiv = optionElement.parentElement;
+    
+    // Actualizar texto seleccionado
+    selectedText.textContent = optionElement.textContent;
+    
+    // Cerrar dropdown
+    optionsDiv.classList.remove('open');
+    
+    // Guardar datos seleccionados
+    customSelect.setAttribute('data-value', optionElement.getAttribute('data-value'));
+    customSelect.setAttribute('data-nombre', optionElement.getAttribute('data-nombre'));
+    customSelect.setAttribute('data-precio', optionElement.getAttribute('data-precio'));
+    
+    // Trigger actualización
+    actualizarIngredienteExtraCustom(customSelect.closest('.ingrediente-extra-item'));
+}
+
+// Cerrar dropdowns al hacer clic fuera
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.custom-select-wrapper')) {
+        document.querySelectorAll('.custom-options.open').forEach(el => {
+            el.classList.remove('open');
+        });
+    }
+});
+
+// Versión adaptada de actualizar ingrediente extra para dropdown personalizado
+function actualizarIngredienteExtraCustom(item) {
+    const customSelect = item.querySelector('.custom-select');
+    const cantidadInput = item.querySelector('.ingrediente-extra-cantidad');
+    const precioSpan = item.querySelector('.precio-extra');
+    
+    // Actualizar precio del item actual
+    if (customSelect.getAttribute('data-value') && cantidadInput.value) {
+        const precioUnitario = parseFloat(customSelect.getAttribute('data-precio')) || 0;
+        const cantidad = parseFloat(cantidadInput.value) || 0;
+        const precioTotal = precioUnitario * cantidad;
+        precioSpan.textContent = `+$${precioTotal.toFixed(2)}`;
+    } else {
+        precioSpan.textContent = '+$0.00';
+    }
+    
+    // Actualizar la lista completa de ingredientes extras
+    const container = document.getElementById('ingredientesExtrasContainer');
+    const items = container.querySelectorAll('.ingrediente-extra-item');
+    
+    personalizacionActual.ingredientesExtras = [];
+    
+    items.forEach(itemElement => {
+        const selectElement = itemElement.querySelector('.custom-select');
+        const cantidadElement = itemElement.querySelector('.ingrediente-extra-cantidad');
+        
+        if (selectElement.getAttribute('data-value') && cantidadElement.value && parseFloat(cantidadElement.value) > 0) {
+            personalizacionActual.ingredientesExtras.push({
+                productoId: parseInt(selectElement.getAttribute('data-value')),
+                nombre: selectElement.getAttribute('data-nombre'),
+                cantidad: parseFloat(cantidadElement.value),
+                precioUnitario: parseFloat(selectElement.getAttribute('data-precio')) || 0
+            });
+        }
+    });
+    
+    actualizarPrecioPersonalizacion();
+    actualizarPrevisualizacion();
 }
 
 // Cambiar cantidad en personalización
