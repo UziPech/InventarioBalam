@@ -879,11 +879,15 @@ let personalizacionActual = {
     ingredientesExcluidos: [],
     ingredientesExtras: []
 };
+let personalizacionTemporal = null; // Para guardar temporalmente
 
 // Abrir modal de personalización
 function abrirPersonalizacion(productoId) {
     const producto = productosMenu.find(p => p.id === productoId);
-    if (!producto) return;
+    if (!producto) {
+        showToast('❌ Producto no encontrado', 'error');
+        return;
+    }
     
     productoPersonalizacionActual = producto;
     personalizacionActual = {
@@ -891,8 +895,13 @@ function abrirPersonalizacion(productoId) {
         ingredientesExtras: []
     };
     
-    // Actualizar título del modal
+    // Actualizar título del modal y precio base
     document.getElementById('nombreProductoPersonalizar').textContent = producto.nombre;
+    document.getElementById('precioPersonalizacion').textContent = `$${producto.precio.toFixed(2)}`;
+    document.getElementById('precioTotalPersonalizacion').textContent = `$${producto.precio.toFixed(2)}`;
+    
+    // Resetear cantidad
+    document.getElementById('cantidadPersonalizacion').textContent = '1';
     
     // Cargar ingredientes base
     cargarIngredientesBase(producto);
@@ -900,8 +909,25 @@ function abrirPersonalizacion(productoId) {
     // Limpiar ingredientes extras
     document.getElementById('ingredientesExtrasContainer').innerHTML = '';
     
-    // Resetear cantidad
-    document.getElementById('cantidadPersonalizacion').textContent = '1';
+    // Resetear botón guardar
+    const btnGuardar = document.querySelector('[onclick="guardarPersonalizacionTemporal()"]');
+    if (btnGuardar) {
+        btnGuardar.innerHTML = '<i class="fas fa-save"></i> Guardar Temporal';
+        btnGuardar.classList.remove('btn-success');
+        btnGuardar.classList.add('btn-primary');
+    }
+    
+    // Si hay personalización temporal del mismo producto, preguntar si cargar
+    if (personalizacionTemporal && personalizacionTemporal.producto.id === productoId) {
+        setTimeout(() => {
+            if (confirm('¿Deseas cargar la personalización guardada temporalmente?')) {
+                cargarPersonalizacionTemporal();
+            }
+        }, 500);
+    }
+    
+    // Limpiar previsualización
+    document.getElementById('previsualizacionPersonalizacion').innerHTML = '<p class="help-text">La vista previa aparecerá aquí conforme personalices el producto.</p>';
     
     // Abrir modal
     openModal('personalizarIngredientes');
@@ -924,49 +950,76 @@ async function cargarIngredientesBase(producto) {
         const item = document.createElement('div');
         item.className = 'ingrediente-base-item';
         item.innerHTML = `
-            <input type="checkbox" 
-                   id="ingrediente-${ingrediente.productoId}" 
-                   checked 
-                   onchange="toggleIngredienteBase(${ingrediente.productoId}, this.checked)">
-            <div class="ingrediente-base-info">
+            <div class="ingrediente-checkbox">
+                <input type="checkbox" 
+                       id="ingrediente-${ingrediente.productoId}" 
+                       checked 
+                       onchange="toggleIngredienteBase(${ingrediente.productoId}, this.checked)">
+                <label for="ingrediente-${ingrediente.productoId}">
+                    <i class="fas fa-check"></i>
+                </label>
+            </div>
+            <div class="ingrediente-info">
                 <span class="ingrediente-name">${nombreIngrediente}</span>
-                <span class="ingrediente-cantidad">${ingrediente.cantidad} ${productoInventario?.unidad || 'unidades'}</span>
+                <span class="ingrediente-status incluido">Incluido</span>
             </div>
         `;
         container.appendChild(item);
     }
+    
+    actualizarPrevisualizacion();
 }
 
 // Toggle ingrediente base (incluir/excluir)
 function toggleIngredienteBase(ingredienteId, incluir) {
+    const item = document.querySelector(`#ingrediente-${ingredienteId}`).closest('.ingrediente-base-item');
+    const statusSpan = item.querySelector('.ingrediente-status');
+    
     if (incluir) {
         // Remover de excluidos
         personalizacionActual.ingredientesExcluidos = personalizacionActual.ingredientesExcluidos.filter(id => id !== ingredienteId);
+        statusSpan.textContent = 'Incluido';
+        statusSpan.className = 'ingrediente-status incluido';
     } else {
         // Agregar a excluidos
         if (!personalizacionActual.ingredientesExcluidos.includes(ingredienteId)) {
             personalizacionActual.ingredientesExcluidos.push(ingredienteId);
         }
+        statusSpan.textContent = 'Sin este ingrediente';
+        statusSpan.className = 'ingrediente-status excluido';
     }
     
-    console.log('Ingredientes excluidos:', personalizacionActual.ingredientesExcluidos);
+    actualizarPrecioPersonalizacion();
+    actualizarPrevisualizacion();
 }
 
 // Agregar ingrediente extra
 function agregarIngredienteExtra() {
     const container = document.getElementById('ingredientesExtrasContainer');
     
+    // Filtrar productos que no están en ingredientes base
+    const ingredientesBaseIds = productoPersonalizacionActual.ingredientes.map(ing => ing.productoId);
+    const productosDisponibles = productos.filter(p => !ingredientesBaseIds.includes(p.id));
+    
     const item = document.createElement('div');
     item.className = 'ingrediente-extra-item';
     item.innerHTML = `
-        <select class="form-input ingrediente-extra-select" onchange="actualizarIngredienteExtra(this)">
-            <option value="">Seleccionar ingrediente...</option>
-            ${productos.map(p => `<option value="${p.id}" data-nombre="${p.nombre}">${p.nombre} (${p.unidad || 'unidades'})</option>`).join('')}
-        </select>
-        <input type="number" class="form-input ingrediente-extra-cantidad" 
-               step="0.01" min="0.01" value="1" placeholder="Cantidad"
-               onchange="actualizarIngredienteExtra(this)">
-        <button type="button" class="btn btn-danger btn-small" onclick="removerIngredienteExtra(this)">
+        <div class="extra-select-container">
+            <select class="form-input ingrediente-extra-select" onchange="actualizarIngredienteExtra(this)">
+                <option value="">Seleccionar ingrediente extra...</option>
+                ${productosDisponibles.map(p => `<option value="${p.id}" data-nombre="${p.nombre}" data-precio="${p.precio}">${p.nombre} (+$${p.precio.toFixed(2)})</option>`).join('')}
+            </select>
+            <div class="extra-cantidad-container">
+                <label>Cantidad:</label>
+                <input type="number" class="form-input ingrediente-extra-cantidad" 
+                       step="0.5" min="0.5" value="1" 
+                       onchange="actualizarIngredienteExtra(this)">
+            </div>
+        </div>
+        <div class="extra-precio">
+            <span class="precio-extra">+$0.00</span>
+        </div>
+        <button type="button" class="btn btn-danger btn-small" onclick="removerIngredienteExtra(this)" title="Eliminar">
             <i class="fas fa-trash"></i>
         </button>
     `;
@@ -975,33 +1028,52 @@ function agregarIngredienteExtra() {
 
 // Actualizar ingrediente extra
 function actualizarIngredienteExtra(element) {
-    // Actualizar la lista de ingredientes extras
+    const item = element.closest('.ingrediente-extra-item');
+    const select = item.querySelector('.ingrediente-extra-select');
+    const cantidadInput = item.querySelector('.ingrediente-extra-cantidad');
+    const precioSpan = item.querySelector('.precio-extra');
+    
+    // Actualizar precio del item actual
+    if (select.value && cantidadInput.value) {
+        const option = select.options[select.selectedIndex];
+        const precioUnitario = parseFloat(option.getAttribute('data-precio')) || 0;
+        const cantidad = parseFloat(cantidadInput.value) || 0;
+        const precioTotal = precioUnitario * cantidad;
+        precioSpan.textContent = `+$${precioTotal.toFixed(2)}`;
+    } else {
+        precioSpan.textContent = '+$0.00';
+    }
+    
+    // Actualizar la lista completa de ingredientes extras
     const container = document.getElementById('ingredientesExtrasContainer');
     const items = container.querySelectorAll('.ingrediente-extra-item');
     
     personalizacionActual.ingredientesExtras = [];
     
-    items.forEach(item => {
-        const select = item.querySelector('.ingrediente-extra-select');
-        const cantidadInput = item.querySelector('.ingrediente-extra-cantidad');
+    items.forEach(itemElement => {
+        const selectElement = itemElement.querySelector('.ingrediente-extra-select');
+        const cantidadElement = itemElement.querySelector('.ingrediente-extra-cantidad');
         
-        if (select.value && cantidadInput.value && parseFloat(cantidadInput.value) > 0) {
-            const option = select.options[select.selectedIndex];
+        if (selectElement.value && cantidadElement.value && parseFloat(cantidadElement.value) > 0) {
+            const option = selectElement.options[selectElement.selectedIndex];
             personalizacionActual.ingredientesExtras.push({
-                productoId: parseInt(select.value),
+                productoId: parseInt(selectElement.value),
                 nombre: option.getAttribute('data-nombre'),
-                cantidad: parseFloat(cantidadInput.value)
+                cantidad: parseFloat(cantidadElement.value),
+                precioUnitario: parseFloat(option.getAttribute('data-precio')) || 0
             });
         }
     });
     
-    console.log('Ingredientes extras:', personalizacionActual.ingredientesExtras);
+    actualizarPrecioPersonalizacion();
+    actualizarPrevisualizacion();
 }
 
 // Remover ingrediente extra
 function removerIngredienteExtra(button) {
     button.parentElement.remove();
-    actualizarIngredienteExtra();
+    // Simular actualización para recalcular precios
+    actualizarIngredienteExtra(document.createElement('div'));
 }
 
 // Cambiar cantidad en personalización
@@ -1010,6 +1082,139 @@ function cambiarCantidadPersonalizacion(cambio) {
     let cantidad = parseInt(display.textContent) || 1;
     cantidad = Math.max(1, cantidad + cambio);
     display.textContent = cantidad;
+    actualizarPrecioPersonalizacion();
+}
+
+// Actualizar precio con personalizaciones
+function actualizarPrecioPersonalizacion() {
+    if (!productoPersonalizacionActual) return;
+    
+    const cantidad = parseInt(document.getElementById('cantidadPersonalizacion').textContent) || 1;
+    const precioBase = productoPersonalizacionActual.precio;
+    
+    // Calcular precio de ingredientes extras
+    let precioExtras = 0;
+    personalizacionActual.ingredientesExtras.forEach(extra => {
+        precioExtras += extra.precioUnitario * extra.cantidad;
+    });
+    
+    const precioUnitario = precioBase + precioExtras;
+    const precioTotal = precioUnitario * cantidad;
+    
+    // Actualizar displays de precio
+    document.getElementById('precioPersonalizacion').textContent = `$${precioUnitario.toFixed(2)}`;
+    document.getElementById('precioTotalPersonalizacion').textContent = `$${precioTotal.toFixed(2)}`;
+}
+
+// Actualizar previsualización
+function actualizarPrevisualizacion() {
+    if (!productoPersonalizacionActual) return;
+    
+    const container = document.getElementById('previsualizacionPersonalizacion');
+    const cantidad = parseInt(document.getElementById('cantidadPersonalizacion').textContent) || 1;
+    
+    let html = `
+        <div class="preview-item">
+            <h5>${productoPersonalizacionActual.nombre} x${cantidad}</h5>
+        </div>
+    `;
+    
+    // Ingredientes incluidos
+    const ingredientesIncluidos = productoPersonalizacionActual.ingredientes.filter(ing => 
+        !personalizacionActual.ingredientesExcluidos.includes(ing.productoId)
+    );
+    
+    if (ingredientesIncluidos.length > 0) {
+        html += '<div class="preview-section"><strong>Incluye:</strong><ul>';
+        ingredientesIncluidos.forEach(ing => {
+            const producto = productos.find(p => p.id === ing.productoId);
+            if (producto) {
+                html += `<li class="incluido">${producto.nombre}</li>`;
+            }
+        });
+        html += '</ul></div>';
+    }
+    
+    // Ingredientes excluidos
+    if (personalizacionActual.ingredientesExcluidos.length > 0) {
+        html += '<div class="preview-section"><strong>Sin:</strong><ul>';
+        personalizacionActual.ingredientesExcluidos.forEach(id => {
+            const producto = productos.find(p => p.id === id);
+            if (producto) {
+                html += `<li class="excluido">❌ ${producto.nombre}</li>`;
+            }
+        });
+        html += '</ul></div>';
+    }
+    
+    // Ingredientes extras
+    if (personalizacionActual.ingredientesExtras.length > 0) {
+        html += '<div class="preview-section"><strong>Extras:</strong><ul>';
+        personalizacionActual.ingredientesExtras.forEach(extra => {
+            const precioExtra = extra.precioUnitario * extra.cantidad;
+            html += `<li class="extra">✅ ${extra.nombre} x${extra.cantidad} (+$${precioExtra.toFixed(2)})</li>`;
+        });
+        html += '</ul></div>';
+    }
+    
+    container.innerHTML = html;
+}
+
+// Guardar personalización temporal
+function guardarPersonalizacionTemporal() {
+    if (!productoPersonalizacionActual) return;
+    
+    const cantidad = parseInt(document.getElementById('cantidadPersonalizacion').textContent) || 1;
+    
+    personalizacionTemporal = {
+        producto: productoPersonalizacionActual,
+        cantidad: cantidad,
+        personalizaciones: {
+            ingredientesExcluidos: [...personalizacionActual.ingredientesExcluidos],
+            ingredientesExtras: [...personalizacionActual.ingredientesExtras]
+        }
+    };
+    
+    showToast('✅ Personalización guardada temporalmente', 'success');
+    
+    // Cambiar texto del botón para indicar que hay algo guardado
+    const btnGuardar = document.querySelector('[onclick="guardarPersonalizacionTemporal()"]');
+    btnGuardar.innerHTML = '<i class="fas fa-check"></i> Guardado';
+    btnGuardar.classList.remove('btn-primary');
+    btnGuardar.classList.add('btn-success');
+}
+
+// Cargar personalización temporal
+function cargarPersonalizacionTemporal() {
+    if (!personalizacionTemporal) return;
+    
+    // Restaurar datos guardados
+    document.getElementById('cantidadPersonalizacion').textContent = personalizacionTemporal.cantidad;
+    personalizacionActual = {
+        ingredientesExcluidos: [...personalizacionTemporal.personalizaciones.ingredientesExcluidos],
+        ingredientesExtras: [...personalizacionTemporal.personalizaciones.ingredientesExtras]
+    };
+    
+    // Recargar interfaz
+    cargarIngredientesBase(personalizacionTemporal.producto);
+    
+    // Recrear ingredientes extras guardados
+    document.getElementById('ingredientesExtrasContainer').innerHTML = '';
+    personalizacionActual.ingredientesExtras.forEach(extra => {
+        agregarIngredienteExtra();
+        const ultimoItem = document.querySelector('.ingrediente-extra-item:last-child');
+        const select = ultimoItem.querySelector('.ingrediente-extra-select');
+        const cantidadInput = ultimoItem.querySelector('.ingrediente-extra-cantidad');
+        
+        select.value = extra.productoId;
+        cantidadInput.value = extra.cantidad;
+        actualizarIngredienteExtra(select);
+    });
+    
+    actualizarPrecioPersonalizacion();
+    actualizarPrevisualizacion();
+    
+    showToast('✅ Personalización temporal cargada', 'info');
 }
 
 // Agregar producto personalizado al pedido

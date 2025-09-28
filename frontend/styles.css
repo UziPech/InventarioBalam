@@ -1069,6 +1069,221 @@ small, .muted {
     min-width: auto;
 }
 
+/* Mejoras en la personalización */
+.modal-header {
+    position: relative;
+}
+
+.precio-preview {
+    position: absolute;
+    right: 50px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--primary);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.cantidad-section {
+    background: linear-gradient(135deg, var(--primary-light), var(--primary));
+    color: white;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.cantidad-section h4 {
+    color: white;
+    margin-bottom: 16px;
+}
+
+.ingrediente-base-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    background: var(--background);
+    transition: all 0.3s ease;
+    margin-bottom: 8px;
+}
+
+.ingrediente-base-item:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.ingrediente-checkbox {
+    position: relative;
+}
+
+.ingrediente-checkbox input[type="checkbox"] {
+    width: 24px;
+    height: 24px;
+    appearance: none;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    background: var(--background);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.ingrediente-checkbox input[type="checkbox"]:checked {
+    background: var(--success);
+    border-color: var(--success);
+}
+
+.ingrediente-checkbox label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 12px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.ingrediente-checkbox input[type="checkbox"]:checked + label {
+    opacity: 1;
+}
+
+.ingrediente-info {
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ingrediente-name {
+    font-weight: 600;
+    color: var(--text);
+    font-size: 16px;
+}
+
+.ingrediente-status {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.ingrediente-status.incluido {
+    background: var(--success-light);
+    color: var(--success);
+}
+
+.ingrediente-status.excluido {
+    background: var(--danger-light);
+    color: var(--danger);
+}
+
+.ingrediente-extra-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    margin-bottom: 12px;
+    transition: all 0.3s ease;
+}
+
+.ingrediente-extra-item:hover {
+    border-color: var(--warning);
+    border-style: solid;
+}
+
+.extra-select-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.extra-cantidad-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.extra-cantidad-container label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    min-width: 60px;
+}
+
+.extra-precio {
+    color: var(--warning);
+    font-weight: bold;
+    font-size: 14px;
+    min-width: 70px;
+    text-align: center;
+}
+
+.preview-section {
+    background: var(--surface);
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.personalizacion-preview h5 {
+    color: var(--primary);
+    margin-bottom: 12px;
+}
+
+.personalizacion-preview ul {
+    list-style: none;
+    padding: 0;
+    margin: 8px 0;
+}
+
+.personalizacion-preview li {
+    padding: 4px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.personalizacion-preview .incluido {
+    color: var(--success);
+}
+
+.personalizacion-preview .excluido {
+    color: var(--danger);
+}
+
+.personalizacion-preview .extra {
+    color: var(--warning);
+    font-weight: 500;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.footer-price {
+    font-size: 18px;
+    color: var(--primary);
+}
+
+.footer-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
 /* Formularios */
 .form-group {
     margin-bottom: 20px;
