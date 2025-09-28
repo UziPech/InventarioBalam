@@ -834,18 +834,24 @@ small, .muted {
     height: 100%;
     background-color: rgba(0, 0, 0, 0.8);
     backdrop-filter: blur(4px);
+    overflow-y: auto;
+    padding: 20px 0;
 }
 
 .modal-content {
     background: var(--surface);
-    margin: 5% auto;
+    margin: 20px auto;
     padding: 0;
     border-radius: var(--radius);
     width: 90%;
-    max-width: 600px;
+    max-width: 800px;
+    min-height: fit-content;
+    max-height: calc(100vh - 40px);
     box-shadow: 0 20px 60px rgba(0,0,0,.5);
     border: 1px solid var(--border);
     animation: modalSlideIn 0.3s ease;
+    display: flex;
+    flex-direction: column;
 }
 
 .modal-content.large {
@@ -905,6 +911,9 @@ small, .muted {
 
 .modal-body {
     padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
 }
 
 .modal-footer {
@@ -913,6 +922,11 @@ small, .muted {
     display: flex;
     gap: 12px;
     justify-content: flex-end;
+    flex-shrink: 0;
+    position: sticky;
+    bottom: 0;
+    background: var(--surface);
+    z-index: 10;
 }
 
 /* Estilos para Personalización de Ingredientes */
@@ -927,6 +941,16 @@ small, .muted {
     border: 1px solid var(--border);
     border-radius: 8px;
     background: var(--surface);
+    margin-bottom: 16px;
+}
+
+.personalizacion-section:nth-child(3) {
+    border: 2px solid var(--warning);
+    background: rgba(255, 193, 7, 0.1);
+}
+
+.personalizacion-section:nth-child(3) h4 {
+    color: var(--warning);
 }
 
 .personalizacion-section h4 {
@@ -1539,13 +1563,48 @@ small, .muted {
 
     .modal-content {
         width: 95%;
-        margin: 5% auto;
+        margin: 10px auto;
+        max-height: calc(100vh - 20px);
     }
 
     .modal-header,
     .modal-body,
     .modal-footer {
         padding: 20px 16px;
+    }
+    
+    .precio-preview {
+        position: static;
+        transform: none;
+        margin-top: 8px;
+        text-align: center;
+    }
+    
+    .footer-actions {
+        flex-direction: column;
+    }
+    
+    .footer-actions .btn {
+        width: 100%;
+        margin-bottom: 8px;
+    }
+    
+    .personalizacion-container {
+        gap: 16px;
+    }
+    
+    .quantity-controls-large {
+        gap: 16px;
+    }
+    
+    .ingrediente-extra-item {
+        flex-direction: column;
+        gap: 12px;
+        align-items: stretch;
+    }
+    
+    .extra-select-container {
+        width: 100%;
     }
 
     .ingrediente-item {

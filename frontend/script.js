@@ -906,8 +906,12 @@ function abrirPersonalizacion(productoId) {
     // Cargar ingredientes base
     cargarIngredientesBase(producto);
     
-    // Limpiar ingredientes extras
+    // Limpiar ingredientes extras y agregar uno inicial para que sea obvio
     document.getElementById('ingredientesExtrasContainer').innerHTML = '';
+    // Agregar un ingrediente extra inicial para mostrar la funcionalidad
+    setTimeout(() => {
+        agregarIngredienteExtra();
+    }, 100);
     
     // Resetear botón guardar
     const btnGuardar = document.querySelector('[onclick="guardarPersonalizacionTemporal()"]');
